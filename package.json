@@ -1,0 +1,22 @@
+{
+  "name": "orkut",
+  "version": "1.0.0",
+  "description": "Orkut server clone built with MongoDB and graphQL",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "dev": "nodemon index",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gledyson Ferreira dos Santos",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^2.15.1",
+    "colors": "^1.4.0",
+    "graphql": "^15.2.0"
+  },
+  "devDependencies": {
+    "dotenv": "^8.2.0",
+    "nodemon": "^2.0.4"
+  }
+}
