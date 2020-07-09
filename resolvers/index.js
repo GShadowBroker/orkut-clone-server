@@ -1,7 +1,7 @@
-const users = require('../mockData')
+const setMutations = require('./mutations')
+const setQueries = require('./queries')
 
 module.exports = {
-    Query: {
-        allUsers: () => users
-    }
+    Query: setQueries(),
+    Mutation: setMutations()
 }
