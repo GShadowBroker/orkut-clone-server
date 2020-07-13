@@ -6,7 +6,11 @@ module.exports = gql`
         createdAt: String!,
         updatedAt: String!,
         body: String!,
-        authorId: ID!
+        userId: ID!,
+        senderId: ID!,
+        receiverId: ID!,
+        photoId: ID!
+        Sender: User!
     }
 
     type User {
@@ -20,15 +24,17 @@ module.exports = gql`
         country: String,
         city: String,
         about: String,
-        photos: [String]!,
+        videos: [String]!,
+        updates: [Comment]!,
+
         Friends: [User]!,
         Requestees: [User]!,
         Requesters: [User]!,
         Subscriptions: [Community]!,
-        scraps: [Comment]!,
-        videos: [String]!,
-        testimonials: [Comment]!,
-        updates: [Comment]!
+        Scraps: [Comment]!,
+        Testimonials: [Comment]!,
+        Updates: [Comment]!,
+        Photos: [Photo]!
     }
 
     type FriendRequest {
@@ -55,6 +61,7 @@ module.exports = gql`
         description: String,
         category: String,
         language: String,
+
         Members: [User]!
 
         #forum: [Post]!, # Forum
@@ -62,17 +69,34 @@ module.exports = gql`
         #owner: User!
     }
 
+    type Photo {
+        id: ID!
+        userId: ID!
+        url: String!
+        description: String
+    }
+
     type Query {
         allUsers: [User]!
         findUser(userId: ID!): User
 
+        findFriends(userId: ID!): [User]!
+
         allCommunities: [Community]!
+
+        findScraps(receiverId: ID!): [Comment]!
+        findTestimonials(receiverId: ID!): [Comment]!
+        findUpdates(userId: ID!): [Comment]!
+        findPhotos(userId: ID!): [Photo]!
     }
 
     type Mutation {
         sendFriendRequest(requesterId: ID!, requesteeId: ID!): [FriendRequest]!
         respondFriendRequest(requesterId: ID!, requesteeId: ID!, accept: Boolean!): User
         unfriend(userId: ID!, friendId: ID!): User
+
+        sendScrap(body: String!, senderId: ID!, userId: ID!): Comment
+        deleteScrap(userId: ID!, scrapId: ID!): Comment
 
         joinCommunity(userId: ID!, communityId: ID!): Community
         leaveCommunity(userId: ID!, communityId: ID!): Community

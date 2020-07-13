@@ -1,5 +1,5 @@
-const { sequelize, User, Community } = require('../models')
-const { UserInputError } = require('apollo-server')
+const { sequelize, User, Community, Scrap } = require('../models')
+const { UserInputError, ApolloError } = require('apollo-server')
 
 module.exports = () => {
     const mutation = {
@@ -13,8 +13,8 @@ module.exports = () => {
             const requester = await User.findByPk(requesterId, { include: { all: true } })
             const requestee = await User.findByPk(requesteeId, { include: { all: true } })
 
-            if (!requester) throw new UserInputError('Solicitante não encontrado', { invalidArgs: args.requesterId })
-            if (!requestee) throw new UserInputError('Solicitado não encontrado', { invalidArgs: args.requesteeId })
+            if (!requester) throw new UserInputError('Solicitante não encontrado ou inválido', { invalidArgs: args.requesterId })
+            if (!requestee) throw new UserInputError('Solicitado não encontrado ou inválido', { invalidArgs: args.requesteeId })
 
             if (requestee.Friends.find(r => r.id.toString() === requester.id.toString())) throw new UserInputError('Usuário já está na lista de amigos', {
                 invalidArgs: args
@@ -34,32 +34,8 @@ module.exports = () => {
             const requester = await User.findByPk(requesterId, { include: { all: true } })
             const requestee = await User.findByPk(requesteeId, { include: { all: true } })
 
-            if (!requester) throw new UserInputError('Solicitante não encontrado', { invalidArgs: args.requesterId })
-            if (!requestee) throw new UserInputError('Solicitado não encontrado', { invalidArgs: args.requesteeId })
-            /***
-                requestee: {
-                    "id":3,
-                    "name":"Eve",
-                    "email":"eve@gmail.com",
-                    "profile_picture":"https://i.imgur.com/BoHH3Pb.png",
-                    "born":null,
-                    "city":"Hokkaido",
-                    "country":"Japan",
-                    "gender":null,
-                    "about":null,
-                    "videos":[],
-                    "createdAt":"2020-07-06T19:26:18.944Z",
-                    "updatedAt":"2020-07-06T19:26:18.944Z",
-                    "photos":[],
-                    "Subscriptions":[],
-                    "Friends":[],
-                    "Requestees":[],
-                    "Requesters":[
-                        {"id":1,"name":"Gledyson","email":"gledysonferreira@gmail.com","profile_picture":"https://i.imgur.com/BoHH3Pb.png","born":null,"city":"Dourados","country":"Brazil","gender":null,"about":null,"videos":[],"createdAt":"2020-07-06T19:26:18.920Z","updatedAt":"2020-07-06T19:26:18.920Z","friendRequests":{"createdAt":"2020-07-06T19:26:26.827Z","updatedAt":"2020-07-06T19:26:26.827Z","requesterId":1,"requesteeId":3}}
-                    ]
-                }
-            ***/
-
+            if (!requester) throw new UserInputError('Solicitante não encontrado ou inválido', { invalidArgs: args.requesterId })
+            if (!requestee) throw new UserInputError('Solicitado não encontrado ou inválido', { invalidArgs: args.requesteeId })
             if (!requestee.Requesters.find(r => r.id.toString() === requester.id.toString())) throw new UserInputError('Solicitação de amizade não encontrada', {
                 invalidArgs: args
             })
@@ -97,8 +73,8 @@ module.exports = () => {
             const user = await User.findByPk(userId, { include: { all: true } })
             const friend = await User.findByPk(friendId, { include: { all: true } })
 
-            if (!user) throw new UserInputError('Usuário não encontrado', { invalidArgs: args.userId })
-            if (!friend) throw new UserInputError('Amigo não encontrado', { invalidArgs: args.friend })
+            if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
+            if (!friend) throw new UserInputError('Amigo não encontrado ou inválido', { invalidArgs: args.friend })
 
             if (!user.Friends.find(r => r.id.toString() === friend.id.toString())
                 || !friend.Friends.find(r => r.id.toString() === user.id.toString())) {
@@ -122,14 +98,49 @@ module.exports = () => {
             return null
         },
 
+        sendScrap: async (root, args) => {
+            const { senderId, userId, body } = args
+
+            const sender = await User.findByPk(senderId, { include: { all: true }})
+            const user = await User.findByPk(userId, { include: { all: true }})
+
+            if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
+            if (!sender) throw new UserInputError('Remetente não encontrado ou inválido', { invalidArgs: args.senderId })
+
+            const scrap = await Scrap.create({
+                body,
+                senderId: sender.id,
+                receiverId: userId,
+            })
+            if (!scrap) throw new ApolloError('Falha do servidor ao criar novo scrap')
+
+            console.log('scrap'.yellow, JSON.stringify(scrap))
+            return scrap
+        },
+
+        deleteScrap: async (root, args) => {
+            const { userId, scrapId } = args
+
+            const scrap = await Scrap.findByPk(scrapId, { include: { all: true }})
+            const user = await User.findByPk(userId, { include: { all: true }})
+
+            if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
+            if (!scrap) throw new UserInputError('Scrap não encontrado ou inválido', { invalidArgs: args.scrapId })
+
+            await Scrap.destroy({ where: { id: scrap.id } })
+
+            console.log('deleting scrap...'.red, JSON.stringify(scrap))
+            return null
+        },
+
         joinCommunity: async (root, args) => {
             const { userId, communityId } = args
 
             const user = await User.findByPk(userId, { include: { all: true } })
             const community = await Community.findByPk(communityId, { include: { all: true } })
 
-            if (!user) throw new UserInputError('Usuário não encontrado', { invalidArgs: args.userId })
-            if (!community) throw new UserInputError('Comunidade não encontrada', { invalidArgs: args.communityId })
+            if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
+            if (!community) throw new UserInputError('Comunidade não encontrada ou inválida', { invalidArgs: args.communityId })
 
             if (community.Members.find(m => m.id.toString() === user.id.toString())) {
                 throw new UserInputError('Usuário já é membro desta comunidade', { invalidArgs: args })
@@ -146,8 +157,8 @@ module.exports = () => {
             const user = await User.findByPk(userId, { include: { all: true } })
             const community = await Community.findByPk(communityId, { include: { all: true } })
 
-            if (!user) throw new UserInputError('Usuário não encontrado', { invalidArgs: args.userId })
-            if (!community) throw new UserInputError('Comunidade não encontrada', { invalidArgs: args.communityId })
+            if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
+            if (!community) throw new UserInputError('Comunidade não encontrada ou inválida', { invalidArgs: args.communityId })
             if (!community.Members.find(m => m.id.toString() === user.id.toString())) {
                 throw new UserInputError('Usuário não é membro desta comunidade', { invalidArgs: args })
             }

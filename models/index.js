@@ -16,17 +16,44 @@ const sequelize = new Sequelize(
 const User = userModel(sequelize, DataTypes);
 const Community = communityModel(sequelize, DataTypes);
 const Comment = sequelize.define('comment', { body: DataTypes.STRING });
-const Photo = sequelize.define('photo', { url: DataTypes.STRING });
+const Scrap = sequelize.define('scrap', { body: DataTypes.STRING(1000) });
+const Testimonial = sequelize.define('testimonial', { body: DataTypes.STRING });
+const Update = sequelize.define('updates', { body: DataTypes.STRING });
+const Photo = sequelize.define('photo', { url: DataTypes.STRING, description: DataTypes.STRING });
 
 // Associations
-// Scraps
 
-// Photo - User - Comments
-User.hasMany(Photo, { foreignKey: 'userId', onDelete: 'CASCADE' }); // TEST AND ADD ONDELETE CASCADE
+// Scraps
+User.hasMany(Scrap, { as: 'Scraps', foreignKey: { name: 'receiverId', allowNull: false } });
+// Adds userId to scraps by default. foreignKey: 'receiverId' creates receiverId field in scraps.
+// users get accessor .getScraps().
+User.hasMany(Scrap, { as: 'SentScraps', foreignKey: { name: 'senderId', allowNull: false } });
+// Adds senderId field to scraps.
+// users get accessor .getSentScraps().
+Scrap.belongsTo(User, { as: "Receiver", foreignKey: { name: 'receiverId', allowNull: false } });
+// Has to call .getScraps({ include: { model: User, as: 'Receiver' }})
+Scrap.belongsTo(User, { as: "Sender", foreignKey: { name: 'senderId', allowNull: false } });
+// Has to call .getScraps({ include: { model: User, as: 'Sender' }})
+
+// Testimonials
+User.hasMany(Testimonial, { as: 'Testimonials', foreignKey: { name: 'receiverId', allowNull: false } });
+User.hasMany(Testimonial, { as: 'sentTestimonials', foreignKey: { name: 'senderId', allowNull: false } });
+Testimonial.belongsTo(User, { as: "Receiver", foreignKey: { name: 'receiverId', allowNull: false } });
+Testimonial.belongsTo(User, { as: "Sender", foreignKey: { name: 'senderId', allowNull: false } });
+
+// Updates
+User.hasMany(Update, { as: 'Updates', foreignKey: { name: 'userId', allowNull: false } });
+Update.belongsTo(User);
+
+// // Photo - User - Comments
+User.hasMany(Photo, { as: 'Photos', foreignKey: { name: 'userId', allowNull: false } });
 Photo.belongsTo(User);
 
-Photo.hasMany(Comment, { foreignKey: 'photoId', onDelete: 'CASCADE' }); // TEST AND ADD ONDELETE CASCADE
-Comment.belongsTo(Photo);
+// User.hasMany(Photo, { foreignKey: 'userId', onDelete: 'CASCADE' }); // TEST AND ADD ONDELETE CASCADE
+// Photo.belongsTo(User);
+
+// Photo.hasMany(Comment, { foreignKey: 'photoId', onDelete: 'CASCADE' }); // TEST AND ADD ONDELETE CASCADE
+// Comment.belongsTo(Photo);
 
 // Communities - Users
 User.belongsToMany(Community, { as: 'Subscriptions', through: 'user_communities', foreignKey: User.id });
@@ -43,10 +70,36 @@ User.belongsToMany(User, { as: 'Requesters', through: 'friendRequests', foreignK
         await sequelize.sync({ force: true })
         console.log('All models were synchronized'.green);
 
-        const gledy = await User.create({ name: 'Gledyson', password: "123456", email: 'gledysonferreira@gmail.com', city: 'Dourados', country: 'Brazil' });
-        const adam = await User.create({ name: 'Adam', email: 'adam@gmail.com', city: 'Barcelona', country: 'Spain' });
-        const eve = await User.create({ name: 'Eve', email: 'eve@gmail.com', city: 'Hokkaido', country: 'Japan' });
-        const snek = await User.create({ name: 'Snek', email: 'snek@gmail.com', city: 'New Dheli', country: 'India' });
+        const gledy = await User.create({ name: 'Gledyson', password: "123456", profile_picture: "https://pbs.twimg.com/media/DoceX9qV4AAwG0-.jpg", email: 'gledysonferreira@gmail.com', city: 'Dourados', country: 'Brazil' });
+        const adam = await User.create({ name: 'Adam', profile_picture: "https://www1.pictures.zimbio.com/gi/Adam+Sandler+Funny+People+Q+Session+7IWV7W2kXXGl.jpg", email: 'adam@gmail.com', city: 'Barcelona', country: 'Spain' });
+        const eve = await User.create({ name: 'Eve', profile_picture: "https://s31242.pcdn.co/wp-content/uploads/2019/06/EveCREDWiki.jpg", email: 'eve@gmail.com', city: 'Hokkaido', country: 'Japan' });
+        const snek = await User.create({ name: 'Snek', profile_picture: "https://cdn.bulbagarden.net/upload/thumb/e/ef/Arbok_anime.png/250px-Arbok_anime.png", email: 'snek@gmail.com', city: 'New Dheli', country: 'India' });
+
+        await gledy.addFriends(adam.id)
+        await adam.addFriends(gledy.id)
+
+        await gledy.addFriends(eve.id)
+        await eve.addFriends(gledy.id)
+
+        await gledy.addFriends(snek.id)
+        await snek.addFriends(gledy.id)
+
+        await adam.addFriends(eve.id)
+        await eve.addFriends(adam.id)
+
+        await snek.addFriends(eve.id)
+        await eve.addFriends(snek.id)
+
+        await Photo.create({
+            url: "https://i.pinimg.com/236x/d9/01/6b/d9016bbe8c945fdeac3501500f3e6d8a.jpg",
+            description: "Look at the girlfriend I'll never have! lol",
+            userId: "1"
+        })
+        await Photo.create({
+            url: "https://i.imgur.com/nkjxhp8.jpg",
+            description: "Dat curve tho lol",
+            userId: "1"
+        })
 
         const comunidade1 = await Community.create({
             title: "Eu Odeio Acordar Cedo",
@@ -63,35 +116,33 @@ User.belongsToMany(User, { as: 'Requesters', through: 'friendRequests', foreignK
             language: "Português (Brasil)"
         })
 
-        // // Test methods
-        // const sendRequest =  async (requester, requestee) => {
-        //     if (requester.id === requestee.id) {
-        //         console.log('Cannot friend yourself'.red)
-        //         return
-        //     }
-        //     const result = await requester.addRequestee(requestee.id)
-        //     return result
-        // }
+        await Scrap.create({
+            body: 'Eve sending message to Gledy',
+            senderId: "3",
+            receiverId: "1",
+        })
+        await Scrap.create({
+            body: 'Hey, it\'s Adam! Yo fren!',
+            senderId: "2",
+            receiverId: "1",
+        })
 
-        // const acceptRequest = async (requestee, requester) => {
-        //     if (!requestee.Requesters.find(r => r.id === requester.id)) {
-        //         console.log('Cannot find friend request'.red)
-        //         return
-        //     }
-        // }
+        await Testimonial.create({
+            body: "O que dizer de Gureduson? Nada.",
+            senderId: "4",
+            receiverId: "1"
+        })
 
-        // const odeio = await Community.create({ title: 'Eu odeio acordar cedo' })
-        // await snek.addSubscriptions(odeio.id)
+        await Testimonial.create({
+            body: "Devolve meu mago negro!!!!",
+            senderId: "2",
+            receiverId: "1"
+        })
 
-        // await odeio.addMembers(adam.id)
-
-        // const refetchSnek = await User.findOne({ where: { name: 'Snek' }, include: { all: true } })
-        // const refecthOdeio = await Community.findOne({ where: { title: 'Eu odeio acordar cedo' }, include: { all: true } })
-        // const refetchAdam = await User.findOne({ where: { name: 'Adam' }, include: { all: true } })
-
-        // console.log('Snek'.green, JSON.stringify(refetchSnek))
-        // console.log('Community'.green, JSON.stringify(refecthOdeio))
-        // console.log('Adam'.green, JSON.stringify(refetchAdam))
+        await Update.create({
+            body: "Hoje to titi",
+            userId: "1"
+        })
 
     } catch(error) {
         console.error('Error synchronizing models'.red, error);
@@ -101,5 +152,9 @@ User.belongsToMany(User, { as: 'Requesters', through: 'friendRequests', foreignK
 module.exports = {
     sequelize,
     User,
-    Community
+    Community,
+    Scrap,
+    Testimonial,
+    Update,
+    Photo
 }
