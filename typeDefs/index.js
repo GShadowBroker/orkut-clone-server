@@ -1,10 +1,20 @@
 const { gql } = require('apollo-server')
 
 module.exports = gql`
+    scalar Date
+    scalar DateTime
+    scalar EmailAddress
+    scalar URL
+    
+    enum Gender {
+        masculino,
+        feminino
+    }
+
     type Comment {
         id: ID!,
-        createdAt: String!,
-        updatedAt: String!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
         body: String!,
         userId: ID!,
         senderId: ID!,
@@ -15,12 +25,13 @@ module.exports = gql`
 
     type User {
         id: ID!,
-        createdAt: String!,
-        updatedAt: String!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
         name: String!,
         email: String,
-        profile_picture: String,
-        born: String,
+        profile_picture: URL,
+        gender: Gender,
+        born: Date,
         country: String,
         city: String,
         about: String,
@@ -38,26 +49,26 @@ module.exports = gql`
     }
 
     type FriendRequest {
-        createdAt: String!,
-        updatedAt: String!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
         requesterId: ID!,
         requesteeId: ID!
     }
 
     type Post {
         id: ID!
-        createdAt: String!,
-        updatedAt: String!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
         comments: [Comment]!,
         author: User!
     }
 
     type Community {
         id: ID!,
-        createdAt: String!,
-        updatedAt: String!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
         title: String!,
-        picture: String,
+        picture: URL,
         description: String,
         category: String,
         language: String,
@@ -71,8 +82,10 @@ module.exports = gql`
 
     type Photo {
         id: ID!
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
         userId: ID!
-        url: String!
+        url: URL!
         description: String
     }
 
@@ -90,7 +103,27 @@ module.exports = gql`
         findPhotos(userId: ID!): [Photo]!
     }
 
+    type Token {
+        id: ID!
+        value: String!
+    }
+
     type Mutation {
+        register(
+            email: EmailAddress!,
+            password: String!,
+            repeatPassword: String!,
+            born: Date!,
+            name: String!,
+            gender: Gender!,
+            city: String!,
+            country: String!
+        ): User
+        login(
+            email: EmailAddress!,
+            password: String!
+        ): Token
+
         sendFriendRequest(requesterId: ID!, requesteeId: ID!): [FriendRequest]!
         respondFriendRequest(requesterId: ID!, requesteeId: ID!, accept: Boolean!): User
         unfriend(userId: ID!, friendId: ID!): User

@@ -12,7 +12,8 @@ module.exports = (sequelize, DataTypes) => {
             required: true
         },
         email: {
-            type: DataTypes.STRING
+            type: DataTypes.STRING,
+            unique: true
         },
         profile_picture: {
             type: DataTypes.STRING,

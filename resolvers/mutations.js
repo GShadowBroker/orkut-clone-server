@@ -1,8 +1,77 @@
 const { sequelize, User, Community, Scrap } = require('../models')
 const { UserInputError, ApolloError } = require('apollo-server')
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 module.exports = () => {
     const mutation = {
+        register: async (root, args) => {
+            const { email, password, repeatPassword, born, name, gender, city, country } = args
+
+            if (password !== repeatPassword) throw new UserInputError('Senhas não corresponde à repetição de senha', {
+                invalidArgs: repeatPassword
+            })
+
+            // Validation
+
+            // Is Email unique?
+            const nonUniqueEmailUser = await User.findOne({
+                where: {
+                    email
+                }
+            })
+            if (nonUniqueEmailUser) throw new UserInputError('Este e-mail já existe', {
+                invalidArgs: email
+            })
+            
+            const salt = await bcrypt.genSalt(10)
+            const hashedPassword = await bcrypt.hash(password, salt)
+
+            const user = await User.create({
+                name,
+                password: hashedPassword,
+                email,
+                gender,
+                born: new Date(born),
+                city,
+                country
+            });
+            if (!user) throw new ApolloError('Erro ao salvar usuário no banco de dados')
+
+            return user
+        },
+
+        login: async (root, args) => {
+            const { email, password } = args
+
+            const user = await User.findOne({
+                where: {
+                    email
+                }
+            })
+            if (!user) throw new UserInputError('Usuário ou senha inválidos', {
+                invalidArgs: args
+            })
+
+            const isPasswordValid = await bcrypt.compare(password, user.password)
+            if (!isPasswordValid) throw new UserInputError('Usuário ou senha inválidos', {
+                invalidArgs: args
+            })
+
+            const payload = {
+                id: user.id,
+                email: user.email
+            }
+
+            const token = await jwt.sign(payload, process.env.TOKEN_SECRET)
+            if (!token) throw ApolloError('Houve um erro ao criar o token da sessão')
+
+            return {
+                id: user.id,
+                value: token
+            }
+        },
+
         sendFriendRequest: async (root, args) => {
             const { requesterId, requesteeId } = args
 
