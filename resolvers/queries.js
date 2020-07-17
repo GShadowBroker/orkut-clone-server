@@ -37,7 +37,7 @@ module.exports = () => {
         },
 
         findScraps: async (root, args) => {
-            const { receiverId } = args
+            const { receiverId, limit, offset } = args
 
             const user = await User.findByPk(receiverId)
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', {
@@ -46,7 +46,12 @@ module.exports = () => {
             const scraps = await user.getScraps({
                 include: {
                     model: User, as: 'Sender'
-                }
+                },
+                limit,
+                offset,
+                order: [
+                    ["createdAt", "DESC"]
+                ]
             });
 
             console.log('scraps'.yellow, JSON.stringify(scraps))

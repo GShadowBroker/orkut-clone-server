@@ -15,10 +15,10 @@ const sequelize = new Sequelize(
 // Models
 const User = userModel(sequelize, DataTypes);
 const Community = communityModel(sequelize, DataTypes);
-const Comment = sequelize.define('comment', { body: DataTypes.STRING });
-const Scrap = sequelize.define('scrap', { body: DataTypes.STRING(1000) });
-const Testimonial = sequelize.define('testimonial', { body: DataTypes.STRING });
-const Update = sequelize.define('updates', { body: DataTypes.STRING });
+const Comment = sequelize.define('comment', { body: DataTypes.STRING(1000) });
+const Scrap = sequelize.define('scrap', { body: DataTypes.JSON });
+const Testimonial = sequelize.define('testimonial', { body: DataTypes.STRING(1000) });
+const Update = sequelize.define('updates', { body: DataTypes.STRING(1000) });
 const Photo = sequelize.define('photo', { url: DataTypes.STRING, description: DataTypes.STRING });
 
 // Associations
@@ -71,11 +71,12 @@ if (process.env.NODE_ENV === 'development') {
             await sequelize.sync({ force: true })
             console.log('All models were synchronized'.green);
     
-            const gledy = await User.create({ name: 'Gledyson', password: "$2b$10$m6f1jkf0y9Md9c0hed8G0OlODjNZ10qTWBW6IlcFPrJvaCEqQ520q", gender: "masculino", born: "1990-04-21", profile_picture: "https://pbs.twimg.com/media/DoceX9qV4AAwG0-.jpg", email: 'gledysonferreira@gmail.com', city: 'Dourados', country: 'Brazil' });
-            const adam = await User.create({ name: 'Adam', profile_picture: "https://www1.pictures.zimbio.com/gi/Adam+Sandler+Funny+People+Q+Session+7IWV7W2kXXGl.jpg", email: 'adam@gmail.com', city: 'Barcelona', country: 'Spain' });
-            const eve = await User.create({ name: 'Eve', profile_picture: "https://s31242.pcdn.co/wp-content/uploads/2019/06/EveCREDWiki.jpg", email: 'eve@gmail.com', city: 'Hokkaido', country: 'Japan' });
-            const snek = await User.create({ name: 'Snek', profile_picture: "https://cdn.bulbagarden.net/upload/thumb/e/ef/Arbok_anime.png/250px-Arbok_anime.png", email: 'snek@gmail.com', city: 'New Dheli', country: 'India' });
-    
+            const gledy = await User.create({ name: 'Gledyson', password: "$2b$10$m6f1jkf0y9Md9c0hed8G0OlODjNZ10qTWBW6IlcFPrJvaCEqQ520q", gender: "masculino", born: "1990-04-21", profile_picture: "https://static.wikia.nocookie.net/b0252c1c-26b9-4fff-8e0e-99a4875bec63", email: 'gledysonferreira@gmail.com', city: 'Dourados', country: 'Brazil' });
+            const adam = await User.create({ name: 'Adam', profile_picture: "https://www1.pictures.zimbio.com/gi/Adam+Sandler+Funny+People+Q+Session+7IWV7W2kXXGl.jpg", email: 'adam@gmail.com', city: 'Barcelona', country: 'Spain', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' });
+            const eve = await User.create({ name: 'Eve', profile_picture: "https://s31242.pcdn.co/wp-content/uploads/2019/06/EveCREDWiki.jpg", email: 'eve@gmail.com', city: 'Hokkaido', country: 'Japan', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' });
+            const snek = await User.create({ name: 'Snek', profile_picture: "https://cdn.bulbagarden.net/upload/thumb/e/ef/Arbok_anime.png/250px-Arbok_anime.png", email: 'snek@gmail.com', city: 'New Dheli', country: 'India', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' });
+            const larissa = await User.create({ name: 'Larissa Andrade', gender: "feminino", born: "1997-08-12", email: 'larissaa@gmail.com', city: 'São Paulo', country: 'Brazil', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' })
+
             await gledy.addFriends(adam.id)
             await adam.addFriends(gledy.id)
     
@@ -118,20 +119,20 @@ if (process.env.NODE_ENV === 'development') {
             })
     
             await Scrap.create({
-                body: 'Hey, Eve is sending you a random message!',
+                body: {"blocks":[{"key":"2ja3v","text":"Olá! Este é um comentário qualquer...","type":"unstyled","depth":0,"inlineStyleRanges":[],"entityRanges":[],"data":{}}],"entityMap":{}},
                 senderId: "3",
                 receiverId: "1",
             })
-            await Scrap.create({
-                body: 'Hey, it\'s Adam! Yo fren!',
-                senderId: "2",
-                receiverId: "1",
-            })
-            await Scrap.create({
-                body: 'Yo, so I got this forbidden fruit thing... Guess what? Let\'s eat it!!!',
-                senderId: "4",
-                receiverId: "1",
-            })
+            // await Scrap.create({
+            //     body: 'Hey, it\'s Adam! Yo fren!',
+            //     senderId: "2",
+            //     receiverId: "1",
+            // })
+            // await Scrap.create({
+            //     body: 'Yo, so I got this forbidden fruit thing... Guess what? Let\'s eat it!!!',
+            //     senderId: "4",
+            //     receiverId: "1",
+            // })
     
             await Testimonial.create({
                 body: "O que dizer de Gureduson? Nada.",

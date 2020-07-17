@@ -5,6 +5,7 @@ module.exports = gql`
     scalar DateTime
     scalar EmailAddress
     scalar URL
+    scalar JSON
     
     enum Gender {
         masculino,
@@ -15,7 +16,7 @@ module.exports = gql`
         id: ID!,
         createdAt: DateTime!,
         updatedAt: DateTime!,
-        body: String!,
+        body: JSON!,
         userId: ID!,
         senderId: ID!,
         receiverId: ID!,
@@ -97,7 +98,8 @@ module.exports = gql`
 
         allCommunities: [Community]!
 
-        findScraps(receiverId: ID!): [Comment]!
+        findScraps(receiverId: ID!, limit: Int, offset: Int): [Comment]!
+
         findTestimonials(receiverId: ID!): [Comment]!
         findUpdates(userId: ID!): [Comment]!
         findPhotos(userId: ID!): [Photo]!
@@ -128,7 +130,7 @@ module.exports = gql`
         respondFriendRequest(requesterId: ID!, requesteeId: ID!, accept: Boolean!): User
         unfriend(userId: ID!, friendId: ID!): User
 
-        sendScrap(body: String!, senderId: ID!, userId: ID!): Comment
+        sendScrap(body: JSON!, senderId: ID!, userId: ID!): Comment
         deleteScrap(userId: ID!, scrapId: ID!): Comment
 
         joinCommunity(userId: ID!, communityId: ID!): Community
