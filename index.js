@@ -1,13 +1,15 @@
 const { ApolloServer } = require('apollo-server')
 const colors = require('colors')
 if (process.env.NODE_ENV !== 'production') require('dotenv').config()
-const { sequelize, User } = require('./models')
+const { sequelize } = require('./models')
 const typeDefs = require('./typeDefs')
 const resolvers = require('./resolvers')
+const context = require('./context')
 
 const server = new ApolloServer({
     typeDefs,
-    resolvers
+    resolvers,
+    context
 })
 
 server.listen()

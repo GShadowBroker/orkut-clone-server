@@ -16,7 +16,49 @@ module.exports = gql`
         id: ID!,
         createdAt: DateTime!,
         updatedAt: DateTime!,
-        body: JSON!,
+        body: String!,
+        userId: ID!,
+        senderId: ID!,
+        receiverId: ID!,
+        photoId: ID!
+        Sender: User!
+    }
+
+    type Scrap {
+        id: ID!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
+        body: String!,
+        senderId: ID!,
+        receiverId: ID!,
+        Sender: User!
+    }
+
+    type PhotoComment {
+        id: ID!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
+        body: String!,
+        receiverId: ID!,
+        photoId: ID!,
+        Sender: User!
+    }
+
+    type Testimonial {
+        id: ID!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
+        body: String!,
+        senderId: ID!,
+        receiverId: ID!,
+        Sender: User!
+    }
+
+    type Update {
+        id: ID!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
+        body: String!,
         userId: ID!,
         senderId: ID!,
         receiverId: ID!,
@@ -37,15 +79,14 @@ module.exports = gql`
         city: String,
         about: String,
         videos: [String]!,
-        updates: [Comment]!,
 
         Friends: [User]!,
         Requestees: [User]!,
         Requesters: [User]!,
         Subscriptions: [Community]!,
-        Scraps: [Comment]!,
-        Testimonials: [Comment]!,
-        Updates: [Comment]!,
+        Scraps: [Scrap]!,
+        Testimonials: [Testimonial]!,
+        Updates: [Update]!,
         Photos: [Photo]!
     }
 
@@ -88,21 +129,39 @@ module.exports = gql`
         userId: ID!
         url: URL!
         description: String
+        
+        Comments: [PhotoComment]
+    }
+
+    type PhotoCount {
+        count: Int,
+        rows: [Photo]!
+    }
+    type ScrapCount {
+        count: Int,
+        rows: [Scrap]!
+    }
+    type PhotoCommentCount {
+        count: Int,
+        rows: [PhotoComment]!
     }
 
     type Query {
-        allUsers: [User]!
-        findUser(userId: ID!): User
+        allUsers(, limit: Int, offset: Int): [User]!
+        findUser(userId: ID): User
 
-        findFriends(userId: ID!): [User]!
+        findFriends(userId: ID!, limit: Int, offset: Int): [User]!
 
-        allCommunities: [Community]!
+        allCommunities(limit: Int, offset: Int): [Community]!
 
-        findScraps(receiverId: ID!, limit: Int, offset: Int): [Comment]!
+        findScraps(receiverId: ID!, limit: Int, offset: Int): ScrapCount!
 
-        findTestimonials(receiverId: ID!): [Comment]!
-        findUpdates(userId: ID!): [Comment]!
-        findPhotos(userId: ID!): [Photo]!
+        findTestimonials(receiverId: ID!, limit: Int, offset: Int): [Testimonial]!
+        findUpdates(userId: ID!, limit: Int, offset: Int): [Update]!
+        findPhotos(userId: ID!, limit: Int, offset: Int): PhotoCount!
+
+        findPhoto(photoId: ID!, userId: ID!): Photo
+        findPhotoComments(photoId: ID!, limit: Int, offset: Int): PhotoCommentCount!
     }
 
     type Token {
@@ -130,8 +189,11 @@ module.exports = gql`
         respondFriendRequest(requesterId: ID!, requesteeId: ID!, accept: Boolean!): User
         unfriend(userId: ID!, friendId: ID!): User
 
-        sendScrap(body: JSON!, senderId: ID!, userId: ID!): Comment
-        deleteScrap(userId: ID!, scrapId: ID!): Comment
+        sendScrap(body: String!, senderId: ID!, userId: ID!): Scrap
+        deleteScrap(userId: ID!, scrapId: ID!): Scrap
+
+        sendTestimonial(body: String!, senderId: ID!, userId: ID!): Testimonial
+        deleteTestimonial(userId: ID!, testimonialId: ID!): Testimonial
 
         joinCommunity(userId: ID!, communityId: ID!): Community
         leaveCommunity(userId: ID!, communityId: ID!): Community

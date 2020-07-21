@@ -1,4 +1,4 @@
-const { sequelize, User, Community, Scrap } = require('../models')
+const { sequelize, User, Community, Scrap, Testimonial } = require('../models')
 const { UserInputError, ApolloError } = require('apollo-server')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
@@ -79,8 +79,14 @@ module.exports = () => {
                 invalidArgs: args
             })
 
-            const requester = await User.findByPk(requesterId, { include: { all: true } })
-            const requestee = await User.findByPk(requesteeId, { include: { all: true } })
+            const requester = await User.findByPk(requesterId)
+            const requestee = await User.findByPk(requesteeId, {
+                include: {
+                    model: User,
+                    as: "Friends",
+                    attributes: ["id"]
+                }
+            })
 
             if (!requester) throw new UserInputError('Solicitante não encontrado ou inválido', { invalidArgs: args.requesterId })
             if (!requestee) throw new UserInputError('Solicitado não encontrado ou inválido', { invalidArgs: args.requesteeId })
@@ -100,8 +106,20 @@ module.exports = () => {
                 invalidArgs: args
             })
 
-            const requester = await User.findByPk(requesterId, { include: { all: true } })
-            const requestee = await User.findByPk(requesteeId, { include: { all: true } })
+            const requester = await User.findByPk(requesterId, {
+                include: {
+                    model: User,
+                    as: "Requesters",
+                    attributes: ["id"]
+                }
+            })
+            const requestee = await User.findByPk(requesteeId, {
+                include: {
+                    model: User,
+                    as: "Requesters",
+                    attributes: ["id"]
+                }
+            })
 
             if (!requester) throw new UserInputError('Solicitante não encontrado ou inválido', { invalidArgs: args.requesterId })
             if (!requestee) throw new UserInputError('Solicitado não encontrado ou inválido', { invalidArgs: args.requesteeId })
@@ -139,11 +157,23 @@ module.exports = () => {
                 invalidArgs: args
             })
 
-            const user = await User.findByPk(userId, { include: { all: true } })
-            const friend = await User.findByPk(friendId, { include: { all: true } })
+            const user = await User.findByPk(userId, {
+                include: {
+                    model: User,
+                    as: "Friends",
+                    attributes: ["id"]
+                }
+            })
+            const friend = await User.findByPk(friendId, {
+                include: {
+                    model: User,
+                    as: "Friends",
+                    attributes: ["id"]
+                }
+            })
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
-            if (!friend) throw new UserInputError('Amigo não encontrado ou inválido', { invalidArgs: args.friend })
+            if (!friend) throw new UserInputError('Amigo não encontrado ou inválido', { invalidArgs: args.friendId })
 
             if (!user.Friends.find(r => r.id.toString() === friend.id.toString())
                 || !friend.Friends.find(r => r.id.toString() === user.id.toString())) {
@@ -170,8 +200,8 @@ module.exports = () => {
         sendScrap: async (root, args) => {
             const { senderId, userId, body } = args
 
-            const sender = await User.findByPk(senderId, { include: { all: true }})
-            const user = await User.findByPk(userId, { include: { all: true }})
+            const sender = await User.findByPk(senderId)
+            const user = await User.findByPk(userId)
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
             if (!sender) throw new UserInputError('Remetente não encontrado ou inválido', { invalidArgs: args.senderId })
@@ -179,34 +209,65 @@ module.exports = () => {
             const scrap = await Scrap.create({
                 body,
                 senderId: sender.id,
-                receiverId: userId,
+                receiverId: user.id,
             })
             if (!scrap) throw new ApolloError('Falha do servidor ao criar novo scrap')
 
-            console.log('scrap'.yellow, JSON.stringify(scrap))
             return scrap
         },
 
         deleteScrap: async (root, args) => {
             const { userId, scrapId } = args
 
-            const scrap = await Scrap.findByPk(scrapId, { include: { all: true }})
-            const user = await User.findByPk(userId, { include: { all: true }})
+            const scrap = await Scrap.findByPk(scrapId)
+            const user = await User.findByPk(userId)
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
             if (!scrap) throw new UserInputError('Scrap não encontrado ou inválido', { invalidArgs: args.scrapId })
 
             await Scrap.destroy({ where: { id: scrap.id } })
 
-            console.log('deleting scrap...'.red, JSON.stringify(scrap))
+            return null
+        },
+
+        sendTestimonial: async (root, args) => {
+            const { senderId, userId, body } = args
+
+            const testimonial = await Testimonial.create({
+                body,
+                senderId: senderId,
+                receiverId: userId,
+            })
+            if (!testimonial) throw new ApolloError('Falha do servidor ao criar novo depoimento')
+
+            return testimonial
+        },
+
+        deleteTestimonial: async (root, args) => {
+            const { userId, testimonialId } = args
+
+            const testimonial = await Testimonial.findByPk(testimonialId)
+            const user = await User.findByPk(userId)
+
+            if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
+            if (!testimonial) throw new UserInputError('Depoimento não encontrado ou inválido', { invalidArgs: args.testimonialId })
+
+            await Testimonial.destroy({ where: { id: testimonial.id } })
+
             return null
         },
 
         joinCommunity: async (root, args) => {
             const { userId, communityId } = args
 
-            const user = await User.findByPk(userId, { include: { all: true } })
-            const community = await Community.findByPk(communityId, { include: { all: true } })
+            const user = await User.findByPk(userId)
+            const community = await Community.findByPk(communityId, {
+                include: {
+                    model: User,
+                    as: 'Members',
+                    attributes: ["id"]
+                }
+            })
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
             if (!community) throw new UserInputError('Comunidade não encontrada ou inválida', { invalidArgs: args.communityId })
@@ -223,8 +284,14 @@ module.exports = () => {
         leaveCommunity: async (root, args) => {
             const { userId, communityId } = args
 
-            const user = await User.findByPk(userId, { include: { all: true } })
-            const community = await Community.findByPk(communityId, { include: { all: true } })
+            const user = await User.findByPk(userId)
+            const community = await Community.findByPk(communityId, {
+                include: {
+                    model: User,
+                    as: 'Members',
+                    attributes: ["id"]
+                }
+            })
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
             if (!community) throw new UserInputError('Comunidade não encontrada ou inválida', { invalidArgs: args.communityId })
