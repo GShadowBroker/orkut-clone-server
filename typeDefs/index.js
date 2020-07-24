@@ -4,12 +4,12 @@ module.exports = gql`
     scalar Date
     scalar DateTime
     scalar EmailAddress
-    scalar URL
     scalar JSON
     
     enum Gender {
         masculino,
-        feminino
+        feminino,
+        outro
     }
 
     type Comment {
@@ -60,10 +60,13 @@ module.exports = gql`
         updatedAt: DateTime!,
         body: String!,
         userId: ID!,
-        senderId: ID!,
-        receiverId: ID!,
-        photoId: ID!
-        Sender: User!
+
+        verb: String,
+        object: String,
+        picture: String,
+        likes: Int,
+
+        User: User!
     }
 
     type User {
@@ -72,9 +75,10 @@ module.exports = gql`
         updatedAt: DateTime!,
         name: String!,
         email: String,
-        profile_picture: URL,
+        profile_picture: String,
         gender: Gender,
         born: Date,
+        age: Int,
         country: String,
         city: String,
         about: String,
@@ -105,21 +109,52 @@ module.exports = gql`
         author: User!
     }
 
+    type Category {
+        id: ID!,
+        title: String!
+    }
+
+    type TopicComment {
+        id: ID!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
+        body: String!,
+        senderId: ID,
+        receiverId: ID,
+
+        Receiver: User,
+        Sender: User,
+        Topic: Topic
+    }
+
+    type Topic {
+        id: ID!,
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
+        title: String!,
+        body: String!,
+
+        Community: Community,
+        TopicCreator: User,
+        Comments: [TopicComment]
+    }
+
     type Community {
         id: ID!,
         createdAt: DateTime!,
         updatedAt: DateTime!,
         title: String!,
-        picture: URL,
-        description: String,
-        category: String,
+        picture: String!,
+        description: String!,
         language: String,
+        type: String!
 
+        Creator: User,
+        Category: Category,
         Members: [User]!
+        Topics: [Topic]!
 
-        #forum: [Post]!, # Forum
-        #moderators: [User]!,
-        #owner: User!
+        #moderators: [User]!
     }
 
     type Photo {
@@ -127,22 +162,22 @@ module.exports = gql`
         createdAt: DateTime!,
         updatedAt: DateTime!,
         userId: ID!
-        url: URL!
+        url: String!
         description: String
         
         Comments: [PhotoComment]
     }
 
     type PhotoCount {
-        count: Int,
+        count: Int!,
         rows: [Photo]!
     }
     type ScrapCount {
-        count: Int,
+        count: Int!,
         rows: [Scrap]!
     }
     type PhotoCommentCount {
-        count: Int,
+        count: Int!,
         rows: [PhotoComment]!
     }
 
@@ -150,18 +185,25 @@ module.exports = gql`
         allUsers(, limit: Int, offset: Int): [User]!
         findUser(userId: ID): User
 
-        findFriends(userId: ID!, limit: Int, offset: Int): [User]!
+        getFeed(limit: Int, offset: Int): [Update]!
 
-        allCommunities(limit: Int, offset: Int): [Community]!
+        findFriends(userId: ID!, limit: Int, offset: Int): [User]!
 
         findScraps(receiverId: ID!, limit: Int, offset: Int): ScrapCount!
 
         findTestimonials(receiverId: ID!, limit: Int, offset: Int): [Testimonial]!
+
+
         findUpdates(userId: ID!, limit: Int, offset: Int): [Update]!
         findPhotos(userId: ID!, limit: Int, offset: Int): PhotoCount!
 
         findPhoto(photoId: ID!, userId: ID!): Photo
         findPhotoComments(photoId: ID!, limit: Int, offset: Int): PhotoCommentCount!
+
+        allCommunities(limit: Int, offset: Int): [Community]!
+        findCommunity(communityId: ID!): Community
+
+        findTopic(topicId: ID!, commentLimit: Int, commentOffset: Int): Topic
     }
 
     type Token {
@@ -185,17 +227,31 @@ module.exports = gql`
             password: String!
         ): Token
 
-        sendFriendRequest(requesterId: ID!, requesteeId: ID!): [FriendRequest]!
-        respondFriendRequest(requesterId: ID!, requesteeId: ID!, accept: Boolean!): User
-        unfriend(userId: ID!, friendId: ID!): User
+        sendFriendRequest(requesteeId: ID!): [FriendRequest]!
+        respondFriendRequest(requesterId: ID!, accept: Boolean!): User
+        unfriend(friendId: ID!): User
 
-        sendScrap(body: String!, senderId: ID!, userId: ID!): Scrap
+        sendScrap(body: String!, userId: ID!): Scrap
         deleteScrap(userId: ID!, scrapId: ID!): Scrap
 
-        sendTestimonial(body: String!, senderId: ID!, userId: ID!): Testimonial
+        sendTestimonial(body: String!, userId: ID!): Testimonial
         deleteTestimonial(userId: ID!, testimonialId: ID!): Testimonial
 
-        joinCommunity(userId: ID!, communityId: ID!): Community
-        leaveCommunity(userId: ID!, communityId: ID!): Community
+        createCommunity(
+            title: String!
+            picture: String!
+            description: String
+            categoryId: ID!
+            type: String!
+            language: String!
+        ): Community
+        joinCommunity(communityId: ID!): Community
+        leaveCommunity(communityId: ID!): Community
+
+        createTopic(communityId: ID!, title: String!, body: String): Topic
+        deleteTopic(topicId: ID!): Topic
+
+        sendTopicComment(topicId: ID!, body: String!): TopicComment
+        deleteTopicComment(topicCommentId: ID!): TopicComment
     }
 `

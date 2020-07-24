@@ -1,5 +1,6 @@
-const { User, Community, Scrap, sequelize, Photo, PhotoComment, Testimonial, Update } = require('../models')
-const { UserInputError } = require('apollo-server')
+const { User, Community, Category, Scrap, sequelize, Photo, PhotoComment, Testimonial, Update, Topic, TopicComment } = require('../models')
+const { UserInputError, ApolloError } = require('apollo-server')
+const { Op } = require('sequelize')
 
 module.exports = () => {
     const queries = {
@@ -35,7 +36,8 @@ module.exports = () => {
 
         findUser: async (root, args, context) => {
             const { userId } = args
-            if (!userId) return context.currentUser
+            const { currentUser } = context
+            if (!userId || (currentUser && userId === currentUser.id.toString())) return currentUser
 
             const user = await User.findByPk(userId, {
                 attributes: { exclude: ['password'] },
@@ -101,23 +103,19 @@ module.exports = () => {
             return friends
         },
 
-        findScraps: async (root, args) => {
+        findScraps: async (root, args, context) => {
             const { receiverId, limit, offset } = args
 
-            const user = await User.findByPk(receiverId)
+            let user
+            if (receiverId === context.currentUser.id.toString()) {
+                user = context.currentUser
+            } else {
+                user = await User.findByPk(receiverId)
+            }
+
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', {
                 invalidArgs: args
             })
-            // const scraps = await user.getScraps({
-            //     include: {
-            //         model: User, as: 'Sender'
-            //     },
-            //     limit,
-            //     offset,
-            //     order: [
-            //         ["createdAt", "DESC"]
-            //     ]
-            // });
 
             const scraps = await Scrap.findAndCountAll({
                 where: {
@@ -138,10 +136,16 @@ module.exports = () => {
             return scraps
         },
 
-        findTestimonials: async (root, args) => {
+        findTestimonials: async (root, args, context) => {
             const { receiverId, limit, offset } = args
 
-            const user = await User.findByPk(receiverId)
+            let user
+            if (receiverId === context.currentUser.id.toString()) {
+                user = context.currentUser
+            } else {
+                user = await User.findByPk(receiverId)
+            }
+            
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', {
                 invalidArgs: args
             })
@@ -157,10 +161,15 @@ module.exports = () => {
             return testimonials
         },
 
-        findUpdates: async (root, args) => {
+        findUpdates: async (root, args, context) => {
             const { userId, limit, offset } = args
 
-            const user = await User.findByPk(userId)
+            let user
+            if (receiverId === context.currentUser.id.toString()) {
+                user = context.currentUser
+            } else {
+                user = await User.findByPk(receiverId)
+            }
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', {
                 invalidArgs: args
@@ -174,10 +183,39 @@ module.exports = () => {
             return updates
         },
 
-        findPhotos: async (root, args) => {
+        getFeed: async (root, args, context) => {
+            const { limit, offset } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            const feed = await Update.findAll({
+                where: {
+                    [Op.or]: currentUser.Friends.map(friend => ({ userId: friend.id }))
+                },
+                include: {
+                    model: User,
+                    as: 'User',
+                    attributes: ["id", "name", "profile_picture"]
+                },
+                limit,
+                offset,
+                order: [
+                    ["createdAt", "DESC"]
+                ]
+            })
+
+            return feed
+        },
+
+        findPhotos: async (root, args, context) => {
             const { userId, limit, offset } = args
 
-            const user = await User.findByPk(userId)
+            let user
+            if (userId === context.currentUser.id.toString()) {
+                user = context.currentUser
+            } else {
+                user = await User.findByPk(userId)
+            }
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', {
                 invalidArgs: args
@@ -198,8 +236,6 @@ module.exports = () => {
                 ]
             })
 
-            console.log('photos'.yellow, JSON.stringify(photos))
-
             return photos
         },
 
@@ -217,7 +253,6 @@ module.exports = () => {
                 invalidArgs: args
             })
 
-            console.log('photo'.yellow, JSON.stringify(photo))
             return photo
         },
 
@@ -239,15 +274,44 @@ module.exports = () => {
                 ]
             })
 
-            console.log('photocomments'.yellow, JSON.stringify(comments))
             return comments
         },
 
         allCommunities: async (root, args) => {
             let { limit, offset } = args
 
-            const communities = await Community.findAll({
+            const communities = await Community.findAll({ // REMOVE MOST ASSOCIATIONS AFTER TESTING! They should reside in findCommunity
                 include: [
+                    {
+                        model: User,
+                        as: 'Creator',
+                        attributes: ["id", "name"]
+                    },
+                    {
+                        model: Category,
+                        as: 'Category',
+                        attributes: ["id", "title"]
+                    },
+                    {
+                        model: Topic,
+                        as: "Topics",
+                        include: [
+                            {
+                                model: User,
+                                as: "TopicCreator",
+                                attributes: ["id", "name", "profile_picture"]
+                            },
+                            {
+                                model: TopicComment,
+                                as: 'Comments',
+                                include: {
+                                    model: User,
+                                    as: 'Sender',
+                                    attributes: ["id", "name", "profile_picture"]
+                                }
+                            }
+                        ]
+                    },
                     {
                         model: User,
                         as: 'Members',
@@ -257,7 +321,76 @@ module.exports = () => {
                 limit,
                 offset
             })
+
             return communities
+        },
+
+        findCommunity: async (root, args) => {
+            let { communityId } = args
+
+            const community = await Community.findByPk(communityId, {
+                include: [
+                    {
+                        model: User,
+                        as: 'Creator',
+                        attributes: ["id", "name"]
+                    },
+                    {
+                        model: Category,
+                        as: 'Category',
+                        attributes: ["id", "title"]
+                    },
+                    {
+                        model: User,
+                        as: 'Members',
+                        attributes: ["id", "name", "profile_picture"]
+                    },
+                    {
+                        model: Topic,
+                        as: "Topics",
+                        include: [
+                            {
+                                model: User,
+                                as: "TopicCreator",
+                                attributes: ["id", "name", "profile_picture"]
+                            }
+                        ]
+                    }
+                ]
+            })
+
+            if (!community) throw new ApolloError('Comunidade não encontrada ou inválida', {
+                invalidArgs: args
+            })
+
+            return community
+        },
+
+        findTopic: async (root, args) => {
+            let { topicId, commentLimit, commentOffset } = args
+
+            const topic = await Topic.findByPk(topicId, {
+                include: [
+                    {
+                        model: User,
+                        as: "TopicCreator",
+                        attributes: ["id", "name", "profile_picture"]
+                    },
+                    {
+                        model: TopicComment,
+                        as: 'Comments',
+                        include: {
+                            model: User,
+                            as: 'Sender',
+                            attributes: ["id", "name", "profile_picture"]
+                        },
+                        limit: commentLimit,
+                        offset: commentOffset
+                    }
+                ]
+            })
+
+            return topic
         }
     }
     return queries

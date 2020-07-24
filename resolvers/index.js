@@ -6,7 +6,6 @@ module.exports = {
     Date: DateResolver,
     DateTime: DateTimeResolver,
     EmailAddress: EmailAddressResolver,
-    URL: URLResolver,
     JSON: JSONResolver,
     
     Query: setQueries(),

@@ -2,3 +2,5 @@ node_modules
 tests.js
 .env
 mockData.js
+config
+config.json

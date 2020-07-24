@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-const { User, Community, Scrap, sequelize, Photo, Testimonial, Update } = require('../models')
+const { User, Community, Scrap, Photo, Testimonial, Update } = require('../models')
 
 module.exports = async ({ req }) => {
     const auth = req ? req.headers.authorization : null

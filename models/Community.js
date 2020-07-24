@@ -14,12 +14,17 @@ module.exports = (sequelize, DataTypes) => {
         picture: {
             type: DataTypes.STRING,
             allowNull: false,
-            required: true
+            required: true,
+            validate: {
+                isUrl: true
+            }
         },
         description: {
             type: DataTypes.STRING(1000)
         },
-        category: DataTypes.STRING,
+        type: DataTypes.ENUM({
+            values: ['público', 'privado']
+        }),
         language: DataTypes.STRING
     }, {});
     return Community

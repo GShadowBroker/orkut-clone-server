@@ -18,24 +18,37 @@ module.exports = (sequelize, DataTypes) => {
         profile_picture: {
             type: DataTypes.STRING,
             defaultValue: "https://i.imgur.com/BoHH3Pb.png",
-            allowNull: false
+            allowNull: false,
+            validate: {
+                isUrl: true
+            }
         },
         born: {
             type: DataTypes.DATEONLY
+        },
+        age: {
+            type: DataTypes.VIRTUAL(DataTypes.INTEGER, ['born']),
+            get: function () {
+                return new Date().getFullYear() - new Date(this.get('born')).getFullYear()
+            }
         },
         city: DataTypes.STRING,
         country: {
             type: DataTypes.STRING
         },
-        gender: DataTypes.STRING,
+        gender: DataTypes.ENUM({
+            values: [
+                'masculino',
+                'feminino',
+                'outro'
+            ]
+        }),
         about: {
             type: DataTypes.STRING
         },
-        // photos: {
-        //     type: DataTypes.ARRAY(DataTypes.STRING),
-        //     defaultValue: [],
-        //     allowNull: false
-        // },
+        interests: {
+            type: DataTypes.STRING
+        },
         videos: {
             type: DataTypes.ARRAY(DataTypes.STRING),
             defaultValue: [],
