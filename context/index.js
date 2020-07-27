@@ -43,7 +43,7 @@ module.exports = async ({ req }) => {
                 },
                 {
                     model: Update,
-                    as: 'Updates',
+                    as: 'Posts',
                     attributes: ['id', 'body'],
                     separate: true
                 },

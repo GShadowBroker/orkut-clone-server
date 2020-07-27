@@ -61,10 +61,10 @@ module.exports = gql`
         body: String!,
         userId: ID!,
 
-        verb: String,
-        object: String,
+        action: String,
+        object: JSON,
         picture: String,
-        likes: Int,
+        visible: Boolean,
 
         User: User!
     }
@@ -90,7 +90,7 @@ module.exports = gql`
         Subscriptions: [Community]!,
         Scraps: [Scrap]!,
         Testimonials: [Testimonial]!,
-        Updates: [Update]!,
+        Posts: [Update]!,
         Photos: [Photo]!
     }
 
@@ -180,12 +180,17 @@ module.exports = gql`
         count: Int!,
         rows: [PhotoComment]!
     }
+    type UpdateCount {
+        count: Int!,
+        rows: [Update]!
+    }
 
     type Query {
         allUsers(, limit: Int, offset: Int): [User]!
         findUser(userId: ID): User
 
-        getFeed(limit: Int, offset: Int): [Update]!
+        getFeed(limit: Int, offset: Int): UpdateCount
+        getFriendSuggestions: [User]!
 
         findFriends(userId: ID!, limit: Int, offset: Int): [User]!
 
@@ -195,8 +200,8 @@ module.exports = gql`
 
 
         findUpdates(userId: ID!, limit: Int, offset: Int): [Update]!
-        findPhotos(userId: ID!, limit: Int, offset: Int): PhotoCount!
 
+        findPhotos(userId: ID!, limit: Int, offset: Int): PhotoCount!
         findPhoto(photoId: ID!, userId: ID!): Photo
         findPhotoComments(photoId: ID!, limit: Int, offset: Int): PhotoCommentCount!
 
@@ -231,11 +236,17 @@ module.exports = gql`
         respondFriendRequest(requesterId: ID!, accept: Boolean!): User
         unfriend(friendId: ID!): User
 
+        updateProfilePicture(newPhoto: String!): User
+
         sendScrap(body: String!, userId: ID!): Scrap
         deleteScrap(userId: ID!, scrapId: ID!): Scrap
 
         sendTestimonial(body: String!, userId: ID!): Testimonial
         deleteTestimonial(userId: ID!, testimonialId: ID!): Testimonial
+
+        sendUpdate(body: String!): Update
+        hideUpdate(updateId: ID!): Update
+        deleteUpdate(updateId: ID!): Update
 
         createCommunity(
             title: String!

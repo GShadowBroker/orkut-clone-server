@@ -1,6 +1,19 @@
-const { User, Community, Category, Scrap, sequelize, Photo, PhotoComment, Testimonial, Update, Topic, TopicComment } = require('../models')
+const {
+    User, 
+    Community, 
+    Category, 
+    Scrap, 
+    sequelize, 
+    Photo, 
+    PhotoComment, 
+    Testimonial, 
+    Update, 
+    Topic, 
+    TopicComment 
+} = require('../models')
+const { Sequelize, Op } = require('sequelize')
+
 const { UserInputError, ApolloError } = require('apollo-server')
-const { Op } = require('sequelize')
 
 module.exports = () => {
     const queries = {
@@ -77,7 +90,7 @@ module.exports = () => {
                     },
                     {
                         model: Update,
-                        as: 'Updates',
+                        as: 'Posts',
                         attributes: ['id', 'body'],
                         separate: true
                     },
@@ -163,19 +176,21 @@ module.exports = () => {
 
         findUpdates: async (root, args, context) => {
             const { userId, limit, offset } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
 
             let user
-            if (receiverId === context.currentUser.id.toString()) {
-                user = context.currentUser
+            if (userId === currentUser.id.toString()) {
+                user = currentUser
             } else {
-                user = await User.findByPk(receiverId)
+                user = await User.findByPk(userId)
             }
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', {
                 invalidArgs: args
             })
 
-            const updates = await user.getUpdates({
+            const updates = await user.getPosts({
                 limit,
                 offset
             });
@@ -188,9 +203,12 @@ module.exports = () => {
             const { currentUser } = context
             if (!currentUser) throw new UserInputError('Erro de autenticação')
 
-            const feed = await Update.findAll({
+            const feed = await Update.findAndCountAll({
                 where: {
-                    [Op.or]: currentUser.Friends.map(friend => ({ userId: friend.id }))
+                    [Op.or]: [
+                        ...currentUser.Friends.map(friend => ({ userId: friend.id })),
+                        { userId: currentUser.id }
+                    ]
                 },
                 include: {
                     model: User,
@@ -204,7 +222,140 @@ module.exports = () => {
                 ]
             })
 
+            console.log('feed'.red, JSON.stringify(feed))
             return feed
+        },
+
+        getFriendSuggestions: async (root, args, context) => {
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            const requesteesRaw = await currentUser.getRequestees({
+                attributes: ["id"]
+            })
+            const requestees = requesteesRaw.map(r => r.id.toString())
+            console.log('requestees'.yellow, requestees)
+
+            if (currentUser.Friends.length === 0) {
+                console.log('currentUser.Friends.length === 0'.red)
+                const suggestions = await User.findAll({
+                    attributes: ["id", "name", "profile_picture"],
+                    where: {
+                        id: {
+                            [Op.not]: [
+                                ...requestees,
+                                currentUser.id
+                            ]
+                        }
+                    },
+                    order: [
+                        [Sequelize.fn('RANDOM')]
+                    ],
+                    limit: 4
+                })
+                console.log('suggestions'.yellow, JSON.stringify(suggestions))
+                return suggestions
+            }
+
+            const friends = await sequelize.models.friends.findAll({
+                where: {
+                    userId: {
+                        [Op.or]: currentUser.Friends.map(f => f.id)
+                    }
+                }
+            })
+
+            const friendsIds = friends.map(f => f.userId.toString())
+            const friendsOfFriendsIds = friends
+                .map(f => f.FriendId.toString())
+                .filter(f => (f.toString() !== currentUser.id.toString()) && !friendsIds.includes(f.toString()))
+
+            if (friendsOfFriendsIds.length === 0) {
+                console.log('friendsOfFriendsIds.length === 0'.red)
+                const suggestions = await User.findAll({
+                    attributes: ["id", "name", "profile_picture"],
+                    where: {
+                        id: {
+                            [Op.not]: [
+                                ...requestees,
+                                ...currentUser.Friends.map(friend => friend.id),
+                                currentUser.id
+                            ]
+                        }
+                    },
+                    order: [
+                        [Sequelize.fn('RANDOM')]
+                    ],
+                    limit: 4
+                })
+                console.log('suggestions'.yellow, JSON.stringify(suggestions))
+                return suggestions
+            }
+
+            console.log('There are ppl that are friends with my friends that are not my friends'.red)
+
+            let nonDuplicates = []
+            let duplicates = []
+
+            console.log('looping friendsOfFriendsIds'.red, friendsOfFriendsIds)
+            for (let id of friendsOfFriendsIds) {
+                console.log('checking:', id)
+                console.log('nonDuplicates.includes(id)', nonDuplicates.includes(id))
+                console.log('!duplicates.includes(id)', !duplicates.includes(id))
+                console.log('!currentUser.Friends.includes(Number(id))', !currentUser.Friends.includes(Number(id)))
+                console.log('!requestees.includes(id)', !requestees.includes(id))
+
+                if (nonDuplicates.includes(id)
+                    && !duplicates.includes(id)
+                    && !currentUser.Friends.map(f => f.id.toString()).includes(id)
+                    && !requestees.includes(id)
+                ) {
+                    console.log('including in duplicates:', id)
+                    duplicates.push(id)
+                } else {
+                    console.log('including in nonDuplicates:', id)
+                    nonDuplicates.push(id)
+                }
+            }
+            console.log('nonDuplicates', nonDuplicates)
+            console.log('duplicates', duplicates)
+
+            if (duplicates.length === 0) {
+                const suggestions = await User.findAll({
+                    attributes: ["id", "name", "profile_picture"],
+                    where: {
+                        id: {
+                            [Op.not]: [
+                                ...requestees,
+                                ...currentUser.Friends.map(friend => friend.id),
+                                currentUser.id
+                            ]
+                        }
+                    },
+                    order: [
+                        [Sequelize.fn('RANDOM')]
+                    ],
+                    limit: 4
+                })
+                console.log('suggestions'.yellow, JSON.stringify(suggestions))
+                return suggestions
+            }
+
+            const suggestions = await User.findAll({
+                attributes: ["id", "name", "profile_picture"],
+                where: {
+                    id: {
+                        [Op.or]: duplicates
+                    }
+                },
+                order: [
+                    [Sequelize.fn('RANDOM')]
+                ],
+                limit: 4
+            })
+
+            console.log('suggestions'.red, JSON.stringify(suggestions))
+            return suggestions
         },
 
         findPhotos: async (root, args, context) => {

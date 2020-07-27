@@ -5,6 +5,7 @@ const { sequelize } = require('./models')
 const typeDefs = require('./typeDefs')
 const resolvers = require('./resolvers')
 const context = require('./context')
+const clearOldUpdates = require('./utils/clearOldUpdates')
 
 const server = new ApolloServer({
     typeDefs,
@@ -15,4 +16,5 @@ const server = new ApolloServer({
 server.listen()
     .then(({ url }) => {
         console.log(`🚀 Server ready at ${url}`.cyan)
+        clearOldUpdates(1000 * 60 * 60 * 6)
     })

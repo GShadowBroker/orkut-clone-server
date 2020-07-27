@@ -49,7 +49,7 @@ Testimonial.belongsTo(User, { as: "Receiver", foreignKey: { name: 'receiverId', 
 Testimonial.belongsTo(User, { as: "Sender", foreignKey: { name: 'senderId', allowNull: false } });
 
 // Updates
-User.hasMany(Update, { as: 'Updates', foreignKey: { name: 'userId', allowNull: false } });
+User.hasMany(Update, { as: 'Posts', foreignKey: { name: 'userId', allowNull: false } });
 Update.belongsTo(User, { as: 'User', foreignKey: { name: 'userId', allowNull: false } });
 
 // // Photo - User - Comments
@@ -352,9 +352,8 @@ if (process.env.NODE_ENV === 'development') {
             });
     
             await Update.create({
-                body: "<p>Hoje to titi</p>",
-                verb: "add",
-                object: "update",
+                body: "<p>Hoje tô titi :(</p>",
+                action: "addPost",
                 userId: "1"
             });
 

@@ -5,27 +5,20 @@ module.exports = (sequelize, DataTypes) => {
             required: true,
             allowNull: false
         },
-        verb: {
+        action: {
             type: DataTypes.ENUM({
                 values: [
-                    "add",
-                    "edit"
+                    "joinCommunity",
+                    "addFriend",
+                    "addPost",
+                    "addPhoto"
                 ]
             }),
             required: true,
             allowNull: false
         },
         object: {
-            type: DataTypes.ENUM({
-                values: [
-                    "update",
-                    "friend",
-                    "community",
-                    "photos"
-                ]
-            }),
-            required: true,
-            allowNull: false
+            type: DataTypes.JSON
         },
         picture: {
             type: DataTypes.STRING,
@@ -33,9 +26,9 @@ module.exports = (sequelize, DataTypes) => {
                 isUrl: true
             }
         },
-        likes: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0
+        visible: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true
         }
     }, {});
     return Update

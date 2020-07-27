@@ -12,6 +12,8 @@ const {
 const { UserInputError, ApolloError } = require('apollo-server')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const sanitizeHtml = require('sanitize-html')
+const cloudinary = require('../utils/cloudinary')
 
 module.exports = () => {
     const mutation = {
@@ -153,6 +155,29 @@ module.exports = () => {
                 }
             })
 
+            await Update.create({
+                body: `<p>adicionou ${requester.name} como amigo</p>`,
+                action: "addFriend",
+                object: JSON.stringify({
+                    id: requester.id,
+                    name: requester.name,
+                    url: `/perfil/${requester.id}`,
+                    picture: requester.profile_picture
+                }),
+                userId: requestee.id
+            })
+            await Update.create({
+                body: `<p>adicionou ${requestee.name} como amigo</p>`,
+                action: "addFriend",
+                object: JSON.stringify({
+                    id: requestee.id,
+                    name: requestee.name,
+                    url: `/perfil/${requestee.id}`,
+                    picture: requestee.profile_picture
+                }),
+                userId: requester.id
+            })
+
             return requestee
         },
 
@@ -198,6 +223,40 @@ module.exports = () => {
             return null
         },
 
+        updateProfilePicture: async (root, args, context) => {
+            const { newPhoto } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            try {
+                const uploadResponse = await cloudinary.uploader.upload(newPhoto, {
+                    upload_preset: 'qe2wfvcw'
+                })
+                console.log('uploadResponse'.red, uploadResponse)
+
+                await User.update({
+                    profile_picture: uploadResponse.secure_url
+                }, {
+                    where: {
+                        id: currentUser.id
+                    }
+                })
+
+                await Update.create({
+                    body: "<p>atualizou a foto de perfil</p>",
+                    action: "addPhoto",
+                    userId: currentUser.id,
+                    picture: uploadResponse.secure_url
+                })
+
+                return currentUser
+
+            } catch(error) {
+                console.error(error)
+                return null
+            }
+        },
+
         sendScrap: async (root, args, context) => {
             const { userId, body } = args
             const { currentUser } = context
@@ -208,8 +267,12 @@ module.exports = () => {
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
 
+            const safeBody = sanitizeHtml(body, {
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img' ])
+            })
+
             const scrap = await Scrap.create({
-                body,
+                body: safeBody,
                 senderId: sender.id,
                 receiverId: user.id,
             })
@@ -239,8 +302,11 @@ module.exports = () => {
             const { currentUser } = context
             if (!currentUser) throw new UserInputError('Erro de autenticação')
 
+            const safeBody = sanitizeHtml(body, {
+                allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img' ])
+            })
             const testimonial = await Testimonial.create({
-                body,
+                body: safeBody,
                 senderId: currentUser.id,
                 receiverId: userId,
             })
@@ -262,6 +328,56 @@ module.exports = () => {
 
             await Testimonial.destroy({ where: { id: testimonial.id } })
 
+            return null
+        },
+
+        sendUpdate: async (root, args, context) => {
+            const { body } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            // Body Validation
+
+            const safeBody = sanitizeHtml(body)
+            const post = await Update.create({
+                body: safeBody,
+                action: "addPost",
+                userId: currentUser.id
+            })
+
+            return post
+        },
+
+        hideUpdate: async (root, args, context) => {
+            const { updateId } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            const update = await Update.findByPk(updateId)
+            if (!update) throw new UserInputError('Atualização não encontrada ou inválida', {
+                invalidArgs: updateId
+            })
+
+            const updatedUpdate = await Update.update({ visible: false }, {
+                where: {
+                    id: update.id
+                }
+            })
+
+            return updatedUpdate
+        },
+
+        deleteUpdate: async (root, args, context) => {
+            const { updateId } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            const update = await Update.findByPk(updateId)
+            if (!update) throw new UserInputError('Atualização não encontrada ou inválida', {
+                invalidArgs: updateId
+            })
+
+            await Update.destroy({ where: { id: update.id } })
             return null
         },
 
@@ -292,6 +408,18 @@ module.exports = () => {
                 type
             })
 
+            await Update.create({
+                body: "<p>criou uma comunidade</p>",
+                action: "joinCommunity",
+                object: JSON.stringify({
+                    id: community.id,
+                    name: community.title,
+                    url: `/comunidades/${community.id}`,
+                    picture: community.picture
+                }),
+                userId: currentUser.id
+            })
+
             return community
         },
 
@@ -318,9 +446,14 @@ module.exports = () => {
             await community.addMembers(user.id)
 
             await Update.create({
-                body: "entrou em uma nova comunidade",
-                verb: "add",
-                object: "community",
+                body: "<p>entrou em uma nova comunidade</p>",
+                action: "joinCommunity",
+                object: JSON.stringify({
+                    id: community.id,
+                    name: community.title,
+                    url: `/comunidades/${community.id}`,
+                    picture: community.picture
+                }),
                 userId: user.id
             })
 
@@ -371,9 +504,10 @@ module.exports = () => {
 
             //Body Validation
 
+            const safeBody = sanitizeHtml(body)
             const topic = await Topic.create({
                 title,
-                body,
+                body: safeBody,
                 creatorId: currentUser.id,
                 communityId: community.id
             })
@@ -414,6 +548,8 @@ module.exports = () => {
 
             //Body Validation
 
+            const safeBody = sanitizeHtml(body)
+
             const topic = await Topic.findByPk(topicId)
             if (!topic) throw new ApolloError('Tópico não encontrado ou inválido', {
                 invalidArgs: topicId
@@ -423,7 +559,7 @@ module.exports = () => {
                 senderId: currentUser.id,
                 receiverId: topic.creatorId,
                 topicId: topic.id,
-                body
+                body: safeBody
             })
 
             return topiccomment
