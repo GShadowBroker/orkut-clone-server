@@ -25,7 +25,8 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM({
             values: ['público', 'privado']
         }),
-        language: DataTypes.STRING
+        language: DataTypes.STRING,
+        country: DataTypes.STRING
     }, {});
     return Community
 }

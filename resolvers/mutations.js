@@ -14,15 +14,12 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const sanitizeHtml = require('sanitize-html')
 const cloudinary = require('../utils/cloudinary')
+const sanitizeOptions = require('../utils/sanitizeOptions')
 
 module.exports = () => {
     const mutation = {
         register: async (root, args) => {
-            const { email, password, repeatPassword, born, name, gender, city, country } = args
-
-            if (password !== repeatPassword) throw new UserInputError('Senhas não corresponde à repetição de senha', {
-                invalidArgs: repeatPassword
-            })
+            let { email, password, born, name, sex, country } = args
 
             // Validation
 
@@ -39,13 +36,13 @@ module.exports = () => {
             const salt = await bcrypt.genSalt(10)
             const hashedPassword = await bcrypt.hash(password, salt)
 
+            if (sex === 'notinformed') sex = null
             const user = await User.create({
                 name,
                 password: hashedPassword,
                 email,
-                gender,
+                sex,
                 born: new Date(born),
-                city,
                 country
             });
             if (!user) throw new ApolloError('Erro ao salvar usuário no banco de dados')
@@ -267,9 +264,7 @@ module.exports = () => {
 
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', { invalidArgs: args.userId })
 
-            const safeBody = sanitizeHtml(body, {
-                allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img' ])
-            })
+            const safeBody = sanitizeHtml(body, sanitizeOptions)
 
             const scrap = await Scrap.create({
                 body: safeBody,
@@ -302,9 +297,7 @@ module.exports = () => {
             const { currentUser } = context
             if (!currentUser) throw new UserInputError('Erro de autenticação')
 
-            const safeBody = sanitizeHtml(body, {
-                allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img' ])
-            })
+            const safeBody = sanitizeHtml(body, sanitizeOptions)
             const testimonial = await Testimonial.create({
                 body: safeBody,
                 senderId: currentUser.id,
@@ -338,7 +331,7 @@ module.exports = () => {
 
             // Body Validation
 
-            const safeBody = sanitizeHtml(body)
+            const safeBody = sanitizeHtml(body, sanitizeOptions)
             const post = await Update.create({
                 body: safeBody,
                 action: "addPost",
@@ -504,7 +497,7 @@ module.exports = () => {
 
             //Body Validation
 
-            const safeBody = sanitizeHtml(body)
+            const safeBody = sanitizeHtml(body, sanitizeOptions)
             const topic = await Topic.create({
                 title,
                 body: safeBody,
@@ -532,7 +525,7 @@ module.exports = () => {
 
             if (
                 (currentUser.id.toString() !== topic.creatorId.toString())
-                && currentUser.id.toString() !== topic.Community.creatorId.toString()
+                && currentUser.id.toString() !== topic.Community.creatorId.toString() // INCLUIR MODERADOR TBM
             ) {
                 throw new UserInputError('Não tem permissão para excluir o tópico')
             }
@@ -548,7 +541,7 @@ module.exports = () => {
 
             //Body Validation
 
-            const safeBody = sanitizeHtml(body)
+            const safeBody = sanitizeHtml(body, sanitizeOptions)
 
             const topic = await Topic.findByPk(topicId)
             if (!topic) throw new ApolloError('Tópico não encontrado ou inválido', {

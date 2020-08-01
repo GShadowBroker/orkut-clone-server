@@ -18,8 +18,8 @@ const User = userModel(sequelize, DataTypes);
 const Community = communityModel(sequelize, DataTypes);
 const Update = updateModel(sequelize, DataTypes);
 
-const Topic = sequelize.define('topic', { title: DataTypes.STRING, body: DataTypes.STRING(2048) })
-const TopicComment = sequelize.define('topiccomment', { body: DataTypes.STRING(2048) });
+const Topic = sequelize.define('topic', { title: DataTypes.STRING, body: DataTypes.STRING(4000) })
+const TopicComment = sequelize.define('topiccomment', { body: DataTypes.STRING(4000) });
 const Category = sequelize.define('category', { title: DataTypes.STRING }, { timestamps: false });
 
 const Scrap = sequelize.define('scrap', { body: DataTypes.STRING(1000) });
@@ -100,16 +100,16 @@ Topic.hasMany(TopicComment, { as: 'Comments', foreignKey: { name: 'topicId', all
 TopicComment.belongsTo(Topic, { as: "Topic", foreignKey: { name: "topicId", allowNull: false } });
 
 // Synchronize - Development ONLY
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' && 1 === 2) {
     (async () => {
         try {
             await sequelize.sync({ force: true })
     
-            const gledy = await User.create({ name: 'Gledyson', password: "$2b$10$m6f1jkf0y9Md9c0hed8G0OlODjNZ10qTWBW6IlcFPrJvaCEqQ520q", gender: "masculino", born: "1990-04-21", profile_picture: "https://static.wikia.nocookie.net/b0252c1c-26b9-4fff-8e0e-99a4875bec63", email: 'gledysonferreira@gmail.com', city: 'Dourados', country: 'Brazil' });
+            const gledy = await User.create({ name: 'Gledyson', password: "$2b$10$m6f1jkf0y9Md9c0hed8G0OlODjNZ10qTWBW6IlcFPrJvaCEqQ520q", sex: "masculino", born: "1990-04-21", profile_picture: "https://static.wikia.nocookie.net/b0252c1c-26b9-4fff-8e0e-99a4875bec63", email: 'gledysonferreira@gmail.com', city: 'Dourados', country: 'Brazil' });
             const adam = await User.create({ name: 'Adam', profile_picture: "https://www1.pictures.zimbio.com/gi/Adam+Sandler+Funny+People+Q+Session+7IWV7W2kXXGl.jpg", email: 'adam@gmail.com', city: 'Barcelona', country: 'Spain', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' });
             const eve = await User.create({ name: 'Eve', profile_picture: "https://s31242.pcdn.co/wp-content/uploads/2019/06/EveCREDWiki.jpg", email: 'eve@gmail.com', city: 'Hokkaido', country: 'Japan', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' });
             const snek = await User.create({ name: 'Snek', profile_picture: "https://cdn.bulbagarden.net/upload/thumb/e/ef/Arbok_anime.png/250px-Arbok_anime.png", email: 'snek@gmail.com', city: 'New Dheli', country: 'India', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' });
-            const larissa = await User.create({ name: 'Larissa Andrade', profile_picture: "https://i.pinimg.com/originals/91/69/ba/9169bac70902ec1756a341aa66584b09.jpg", gender: "feminino", born: "1997-08-12", email: 'larissaa@gmail.com', city: 'São Paulo', country: 'Brazil', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' });
+            const larissa = await User.create({ name: 'Larissa Andrade', profile_picture: "https://i.pinimg.com/originals/91/69/ba/9169bac70902ec1756a341aa66584b09.jpg", sex: "feminino", born: "1997-08-12", email: 'larissaa@gmail.com', city: 'São Paulo', country: 'Brazil', password: '$2b$10$tCDBfOxyyotx4kCkZJWfl.LSS82egqFbREtEUe.V70Ju0WmO/zIlq' });
 
             await gledy.addFriends(adam.id)
             await adam.addFriends(gledy.id)
@@ -197,6 +197,7 @@ if (process.env.NODE_ENV === 'development') {
                 categoryId: "28",
                 creatorId: "1",
                 language: "Português (Brasil)",
+                country: "Brasil",
                 type: "público"
             });
             const comoBeberAgua = await Topic.create({
@@ -317,6 +318,7 @@ if (process.env.NODE_ENV === 'development') {
                 categoryId: "28",
                 creatorId: "1",
                 language: "Português (Brasil)",
+                country: "Brasil",
                 type: "público"
             });
 
@@ -327,11 +329,30 @@ if (process.env.NODE_ENV === 'development') {
                 categoryId: "25",
                 type: "privado",
                 language: "Português (Brasil)",
+                country: "Brasil",
                 creatorId: "1"
             })
 
             await gledy.addSubscriptions(comunidade1)
             await gledy.addSubscriptions(comunidade2)
+            await gledy.addSubscriptions(comunidade3)
+
+            await eve.addSubscriptions(comunidade1)
+            await eve.addSubscriptions(comunidade2)
+            await eve.addSubscriptions(comunidade3)
+
+            await adam.addSubscriptions(comunidade1)
+            await adam.addSubscriptions(comunidade2)
+            await adam.addSubscriptions(comunidade3)
+
+            await snek.addSubscriptions(comunidade1)
+            await snek.addSubscriptions(comunidade2)
+            await snek.addSubscriptions(comunidade3)
+
+            await larissa.addSubscriptions(comunidade1)
+            await larissa.addSubscriptions(comunidade2)
+            await larissa.addSubscriptions(comunidade3)
+
     
             await Scrap.create({
                 body: "<p>Hello World!</p>",

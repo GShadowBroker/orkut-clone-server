@@ -222,7 +222,6 @@ module.exports = () => {
                 ]
             })
 
-            console.log('feed'.red, JSON.stringify(feed))
             return feed
         },
 
@@ -234,10 +233,8 @@ module.exports = () => {
                 attributes: ["id"]
             })
             const requestees = requesteesRaw.map(r => r.id.toString())
-            console.log('requestees'.yellow, requestees)
 
             if (currentUser.Friends.length === 0) {
-                console.log('currentUser.Friends.length === 0'.red)
                 const suggestions = await User.findAll({
                     attributes: ["id", "name", "profile_picture"],
                     where: {
@@ -253,7 +250,6 @@ module.exports = () => {
                     ],
                     limit: 4
                 })
-                console.log('suggestions'.yellow, JSON.stringify(suggestions))
                 return suggestions
             }
 
@@ -271,7 +267,6 @@ module.exports = () => {
                 .filter(f => (f.toString() !== currentUser.id.toString()) && !friendsIds.includes(f.toString()))
 
             if (friendsOfFriendsIds.length === 0) {
-                console.log('friendsOfFriendsIds.length === 0'.red)
                 const suggestions = await User.findAll({
                     attributes: ["id", "name", "profile_picture"],
                     where: {
@@ -288,37 +283,23 @@ module.exports = () => {
                     ],
                     limit: 4
                 })
-                console.log('suggestions'.yellow, JSON.stringify(suggestions))
                 return suggestions
             }
-
-            console.log('There are ppl that are friends with my friends that are not my friends'.red)
 
             let nonDuplicates = []
             let duplicates = []
 
-            console.log('looping friendsOfFriendsIds'.red, friendsOfFriendsIds)
             for (let id of friendsOfFriendsIds) {
-                console.log('checking:', id)
-                console.log('nonDuplicates.includes(id)', nonDuplicates.includes(id))
-                console.log('!duplicates.includes(id)', !duplicates.includes(id))
-                console.log('!currentUser.Friends.includes(Number(id))', !currentUser.Friends.includes(Number(id)))
-                console.log('!requestees.includes(id)', !requestees.includes(id))
-
                 if (nonDuplicates.includes(id)
                     && !duplicates.includes(id)
                     && !currentUser.Friends.map(f => f.id.toString()).includes(id)
                     && !requestees.includes(id)
                 ) {
-                    console.log('including in duplicates:', id)
                     duplicates.push(id)
                 } else {
-                    console.log('including in nonDuplicates:', id)
                     nonDuplicates.push(id)
                 }
             }
-            console.log('nonDuplicates', nonDuplicates)
-            console.log('duplicates', duplicates)
 
             if (duplicates.length === 0) {
                 const suggestions = await User.findAll({
@@ -337,7 +318,6 @@ module.exports = () => {
                     ],
                     limit: 4
                 })
-                console.log('suggestions'.yellow, JSON.stringify(suggestions))
                 return suggestions
             }
 
@@ -354,7 +334,6 @@ module.exports = () => {
                 limit: 4
             })
 
-            console.log('suggestions'.red, JSON.stringify(suggestions))
             return suggestions
         },
 
@@ -491,22 +470,22 @@ module.exports = () => {
                         as: 'Category',
                         attributes: ["id", "title"]
                     },
-                    {
-                        model: User,
-                        as: 'Members',
-                        attributes: ["id", "name", "profile_picture"]
-                    },
-                    {
-                        model: Topic,
-                        as: "Topics",
-                        include: [
-                            {
-                                model: User,
-                                as: "TopicCreator",
-                                attributes: ["id", "name", "profile_picture"]
-                            }
-                        ]
-                    }
+                    // {
+                    //     model: User,
+                    //     as: 'Members',
+                    //     attributes: ["id", "name", "profile_picture"]
+                    // },
+                    // {
+                    //     model: Topic,
+                    //     as: "Topics",
+                    //     include: [
+                    //         {
+                    //             model: User,
+                    //             as: "TopicCreator",
+                    //             attributes: ["id", "name", "profile_picture"]
+                    //         }
+                    //     ]
+                    // }
                 ]
             })
 
@@ -518,7 +497,7 @@ module.exports = () => {
         },
 
         findTopic: async (root, args) => {
-            let { topicId, commentLimit, commentOffset } = args
+            let { topicId, limit, offset } = args
 
             const topic = await Topic.findByPk(topicId, {
                 include: [
@@ -535,14 +514,99 @@ module.exports = () => {
                             as: 'Sender',
                             attributes: ["id", "name", "profile_picture"]
                         },
-                        limit: commentLimit,
-                        offset: commentOffset
+                        limit,
+                        offset
                     }
                 ]
             })
 
             return topic
-        }
+        },
+
+        findCommunityTopics: async (root, args) => {
+            const { communityId, limit, offset } = args
+
+            const topics = await Topic.findAndCountAll({
+                where: {
+                    communityId
+                },
+                include: [
+                    {
+                        model: TopicComment,
+                        as: 'Comments',
+                        attributes: ["id", "createdAt", "body"],
+                        order: [
+                            ["createdAt", "DESC"]
+                        ]
+                    },
+                    {
+                        model: User,
+                        as: 'TopicCreator',
+                        attributes: ["id", "name", "profile_picture"]
+                    }
+                ],
+                order: [
+                    ["createdAt", "DESC"]
+                ],
+                limit,
+                offset
+            })
+
+            console.log('topics'.red, JSON.stringify(topics))
+            return topics
+        },
+
+        findTopicComments: async (root, args) => {
+            const { topicId, limit, offset, order } = args
+
+            const comments = await TopicComment.findAndCountAll({
+                where: {
+                    topicId
+                },
+                include: {
+                    model: User,
+                    as: "Sender",
+                    attributes: ["id", "name", "profile_picture"]
+                },
+                order: [
+                    ["createdAt", order]
+                ],
+                limit,
+                offset
+            })
+
+            console.log('topiccomments'.red, JSON.stringify(comments))
+            return comments
+        },
+
+        findCommunityMembers: async (root, args) => {
+            const { communityId, limit, offset } = args
+
+            const community = await Community.findByPk(communityId, {
+                attributes: ["id"]
+            })
+            if (!community) throw new UserInputError('Comunidade não encontrada ou inválida')
+
+            const members = await community.getMembers({
+                attributes: ["id", "name", "profile_picture"],
+                order: [
+                    [Sequelize.fn('RANDOM')]
+                ],
+                limit,
+                offset
+            })
+
+            const memberCount = await sequelize.models.user_communities.count({
+                where: {
+                    communityId
+                }
+            })
+
+            return {
+                count: memberCount,
+                rows: members
+            }
+        },
     }
     return queries
 }

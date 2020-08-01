@@ -9,11 +9,20 @@ module.exports = (sequelize, DataTypes) => {
         name: {
             type: DataTypes.STRING,
             allowNull: false,
-            required: true
+            required: true,
+            validate: {
+                len: [2, 100]
+            }
         },
         email: {
             type: DataTypes.STRING,
-            unique: true
+            unique: true,
+            allowNull: false,
+            required: true,
+            validate: {
+                isEmail: true,
+                len: [5, 255]
+            }
         },
         profile_picture: {
             type: DataTypes.STRING,
@@ -36,11 +45,10 @@ module.exports = (sequelize, DataTypes) => {
         country: {
             type: DataTypes.STRING
         },
-        gender: DataTypes.ENUM({
+        sex: DataTypes.ENUM({
             values: [
                 'masculino',
-                'feminino',
-                'outro'
+                'feminino'
             ]
         }),
         about: {
@@ -56,7 +64,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         password: {
             type: DataTypes.STRING,
-            select: false // Won't be returned in queries by default. To return it, use .select('+password'). In theory. But it doesn't work anyway...
+            select: false // Won't be returned in queries by default. To return it, use .select('+password')
         }
     }, {});
     return User

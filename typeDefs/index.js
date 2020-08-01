@@ -6,10 +6,15 @@ module.exports = gql`
     scalar EmailAddress
     scalar JSON
     
-    enum Gender {
+    enum Sex {
         masculino,
         feminino,
-        outro
+        notinformed
+    }
+
+    enum Order {
+        ASC
+        DESC
     }
 
     type Comment {
@@ -76,7 +81,7 @@ module.exports = gql`
         name: String!,
         email: String,
         profile_picture: String,
-        gender: Gender,
+        sex: Sex,
         born: Date,
         age: Int,
         country: String,
@@ -147,6 +152,7 @@ module.exports = gql`
         picture: String!,
         description: String!,
         language: String,
+        country: String
         type: String!
 
         Creator: User,
@@ -184,6 +190,18 @@ module.exports = gql`
         count: Int!,
         rows: [Update]!
     }
+    type TopicCount {
+        count: Int!,
+        rows: [Topic]!
+    }
+    type UserCount {
+        count: Int!,
+        rows: [User]!
+    }
+    type TopicCommentCount {
+        count: Int!
+        rows: [TopicComment]!
+    }
 
     type Query {
         allUsers(, limit: Int, offset: Int): [User]!
@@ -207,8 +225,13 @@ module.exports = gql`
 
         allCommunities(limit: Int, offset: Int): [Community]!
         findCommunity(communityId: ID!): Community
+        
+        findTopic(topicId: ID!, limit: Int, offset: Int): Topic
+        findCommunityTopics(communityId: ID!, limit: Int, offset: Int): TopicCount!
 
-        findTopic(topicId: ID!, commentLimit: Int, commentOffset: Int): Topic
+        findTopicComments(topicId: ID!, order: Order!, limit: Int, offset: Int): TopicCommentCount!
+
+        findCommunityMembers(communityId: ID!, limit: Int, offset: Int): UserCount!
     }
 
     type Token {
@@ -220,11 +243,9 @@ module.exports = gql`
         register(
             email: EmailAddress!,
             password: String!,
-            repeatPassword: String!,
             born: Date!,
             name: String!,
-            gender: Gender!,
-            city: String!,
+            sex: Sex,
             country: String!
         ): User
         login(
@@ -259,7 +280,7 @@ module.exports = gql`
         joinCommunity(communityId: ID!): Community
         leaveCommunity(communityId: ID!): Community
 
-        createTopic(communityId: ID!, title: String!, body: String): Topic
+        createTopic(communityId: ID!, title: String!, body: String!): Topic
         deleteTopic(topicId: ID!): Topic
 
         sendTopicComment(topicId: ID!, body: String!): TopicComment
