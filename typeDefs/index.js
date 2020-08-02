@@ -227,11 +227,11 @@ module.exports = gql`
         findCommunity(communityId: ID!): Community
         
         findTopic(topicId: ID!, limit: Int, offset: Int): Topic
-        findCommunityTopics(communityId: ID!, limit: Int, offset: Int): TopicCount!
+        findCommunityTopics(communityId: ID!, filter: String, limit: Int, offset: Int): TopicCount!
 
         findTopicComments(topicId: ID!, order: Order!, limit: Int, offset: Int): TopicCommentCount!
 
-        findCommunityMembers(communityId: ID!, limit: Int, offset: Int): UserCount!
+        findCommunityMembers(communityId: ID!, filter: String, random: Boolean, limit: Int, offset: Int): UserCount!
     }
 
     type Token {
