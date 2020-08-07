@@ -3,6 +3,8 @@ const userModel = require('./User');
 const communityModel = require('./Community');
 const updateModel = require('./Update')
 
+const axios = require('axios') // REMOVER AXIOS!!!
+
 // DB Connection
 const sequelize = new Sequelize(
     process.env.DB_NAME,
@@ -25,6 +27,14 @@ const Category = sequelize.define('category', { title: DataTypes.STRING }, { tim
 const Scrap = sequelize.define('scrap', { body: DataTypes.STRING(1000) });
 const Testimonial = sequelize.define('testimonial', { body: DataTypes.STRING(1000) });
 
+const PhotoFolder = sequelize.define('photofolder', {
+    title: DataTypes.STRING,
+    visible_to_all: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+    }
+})
 const Photo = sequelize.define('photo', { url: DataTypes.STRING, description: DataTypes.STRING });
 const PhotoComment = sequelize.define('photocomment', { body: DataTypes.STRING(1000) });
 
@@ -63,6 +73,13 @@ User.hasMany(PhotoComment, { as: 'sentPhotoComments', foreignKey: { name: 'sende
 PhotoComment.belongsTo(User, { as: "Receiver", foreignKey: { name: 'receiverId', allowNull: false } });
 PhotoComment.belongsTo(User, { as: "Sender", foreignKey: { name: 'senderId', allowNull: false } });
 
+// Photo Folders
+User.hasMany(PhotoFolder, { as: 'PhotoFolders', foreignKey: { name: 'userId', allowNull: false } });
+PhotoFolder.belongsTo(User, { as: 'User', foreignKey: { name: 'userId', allowNull: false } });
+
+PhotoFolder.hasMany(Photo, { as: 'Photos', foreignKey: { name: 'folderId', allowNull: false } });
+Photo.belongsTo(PhotoFolder, { as: 'Folder', foreignKey: { name: 'folderId', allowNull: false } });
+
 // User.hasMany(Photo, { foreignKey: 'userId', onDelete: 'CASCADE' }); // TEST AND ADD ONDELETE CASCADE
 // Photo.belongsTo(User);
 
@@ -98,6 +115,9 @@ Topic.belongsTo(Community, { as: "Community", foreignKey: { name: "communityId",
 
 Topic.hasMany(TopicComment, { as: 'Comments', foreignKey: { name: 'topicId', allowNull: false } });
 TopicComment.belongsTo(Topic, { as: "Topic", foreignKey: { name: "topicId", allowNull: false } });
+
+Community.hasMany(TopicComment, { as: "Comments", foreignKey: { name: 'communityId', allowNull: false } });
+TopicComment.belongsTo(Community, { as: "Community", foreignKey: { name: "communityId", allowNull: false } });
 
 // Synchronize - Development ONLY
 if (process.env.NODE_ENV === 'development' && 1 === 2) {
@@ -176,19 +196,25 @@ if (process.env.NODE_ENV === 'development' && 1 === 2) {
                 'Outros'
             ];
 
+            await PhotoFolder.create({
+                title: "A galera sangue bom",
+                userId: "1"
+            });
+
             for (let p of photos) {
                 await Photo.create({
                     url: p,
                     description: "minha foto",
-                    userId: "1"
+                    userId: "1",
+                    folderId: "1"
                 });
-            }
+            };
 
             for (let c of categories) {
                 await Category.create({
                     title: c
                 });
-            }
+            };
 
             const comunidade1 = await Community.create({
                 title: "Eu Odeio Acordar Cedo",
@@ -207,108 +233,19 @@ if (process.env.NODE_ENV === 'development' && 1 === 2) {
                 communityId: "1"
             });
             const comment = await TopicComment.create({
+                communityId: comoBeberAgua.communityId,
                 topicId: comoBeberAgua.id,
                 senderId: "3",
                 receiverId: comoBeberAgua.creatorId,
                 body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
             })
             await TopicComment.create({
+                communityId: comoBeberAgua.communityId,
                 topicId: comoBeberAgua.id,
                 senderId: "3",
                 receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
+                body: "<p>Esse lugar virou uma bagunça. Comentários sem conteúdo. Bleh!</p>"
             })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-            await TopicComment.create({
-                topicId: comoBeberAgua.id,
-                senderId: "3",
-                receiverId: comoBeberAgua.creatorId,
-                body: "<p>Mano, para que tá cringe. Cadê os moderadores dessa bagaça?</p>"
-            })
-
 
 
             const comunidade2 = await Community.create({
@@ -378,6 +315,26 @@ if (process.env.NODE_ENV === 'development' && 1 === 2) {
                 userId: "1"
             });
 
+            const response = await axios.get('https://randomuser.me/api/?results=25')
+            const randUsers = response.data.results
+
+            for (let u of randUsers) {
+                console.log('randUsers'.red, randUsers)
+                const newUser = await User.create({
+                    name: `${u.name.first} ${u.name.last}`,
+                    password: u.login.sha1,
+                    sex: u.gender === 'female' ? 'feminino' : 'masculino',
+                    born: u.dob.date.slice(0, 10),
+                    profile_picture: u.picture.large,
+                    email: u.email,
+                    city: u.location.city,
+                    country: u.location.country
+                })
+                await newUser.addSubscriptions(comunidade1)
+                await newUser.addSubscriptions(comunidade2)
+                await newUser.addSubscriptions(comunidade3)
+            }
+
             console.log('All models synchronized successfully!'.green)
     
         } catch(error) {
@@ -394,6 +351,7 @@ module.exports = {
     Scrap,
     Testimonial,
     Update,
+    PhotoFolder,
     Photo,
     PhotoComment,
     Topic,

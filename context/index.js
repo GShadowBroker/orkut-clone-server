@@ -27,7 +27,7 @@ module.exports = async ({ req }) => {
                 {
                     model: Photo,
                     as: 'Photos',
-                    attributes: ['id', 'url', 'description'],
+                    attributes: ['id', 'url', 'description', 'folderId'],
                     separate: true
                 },
                 {

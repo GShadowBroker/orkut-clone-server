@@ -9,18 +9,18 @@ module.exports = (sequelize, DataTypes) => {
         title: {
             type: DataTypes.STRING,
             required: true,
-            allowNull: false
+            allowNull: false,
+            validate: {
+                len: [1, 100]
+            }
         },
         picture: {
             type: DataTypes.STRING,
             allowNull: false,
-            required: true,
-            validate: {
-                isUrl: true
-            }
+            required: true
         },
         description: {
-            type: DataTypes.STRING(1000)
+            type: DataTypes.STRING(3000)
         },
         type: DataTypes.ENUM({
             values: ['público', 'privado']

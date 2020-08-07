@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         profile_picture: {
             type: DataTypes.STRING,
-            defaultValue: "https://i.imgur.com/BoHH3Pb.png",
+            defaultValue: "https://res.cloudinary.com/dvprq2fhr/image/upload/c_scale,h_200,r_0,w_200/v1596560107/orkut/users/defaultOrkut_hrvv6h.png",
             allowNull: false,
             validate: {
                 isUrl: true
@@ -52,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
             ]
         }),
         about: {
-            type: DataTypes.STRING
+            type: DataTypes.STRING(3000)
         },
         interests: {
             type: DataTypes.STRING

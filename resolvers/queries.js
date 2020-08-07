@@ -9,7 +9,8 @@ const {
     Testimonial, 
     Update, 
     Topic, 
-    TopicComment 
+    TopicComment, 
+    PhotoFolder
 } = require('../models')
 const { Sequelize, Op } = require('sequelize')
 
@@ -74,7 +75,7 @@ module.exports = () => {
                     {
                         model: Photo,
                         as: 'Photos',
-                        attributes: ['id', 'url', 'description'],
+                        attributes: ['id', 'url', 'description', 'folderId'],
                         separate: true
                     },
                     {
@@ -100,7 +101,6 @@ module.exports = () => {
             if (!user) throw new UserInputError('Usuário não encontrado ou inválido', {
                 invalidArgs: userId
             })
-
             return user
         },
 
@@ -337,12 +337,40 @@ module.exports = () => {
             return suggestions
         },
 
+        findPhotoFolders: async (root, args, context) => {
+            const { userId } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            const folders = await PhotoFolder.findAll({
+                where: {
+                    userId
+                },
+                include: [
+                    {
+                        model: Photo,
+                        as: 'Photos',
+                        attributes: ["id", "url", "createdAt"],
+                        order: [
+                            ["createdAt", "DESC"]
+                        ]
+                    }
+                ],
+                order: [
+                    ["createdAt", "DESC"]
+                ]
+            })
+            return folders
+        },
+
         findPhotos: async (root, args, context) => {
-            const { userId, limit, offset } = args
+            const { userId, folderId, limit, offset } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
 
             let user
-            if (userId === context.currentUser.id.toString()) {
-                user = context.currentUser
+            if (userId === currentUser.id.toString()) {
+                user = currentUser
             } else {
                 user = await User.findByPk(userId)
             }
@@ -352,7 +380,10 @@ module.exports = () => {
             })
 
             const photos = await Photo.findAndCountAll({
-                where: { userId },
+                where: {
+                    userId,
+                    folderId
+                },
                 limit, 
                 offset,
                 order: [
@@ -408,49 +439,146 @@ module.exports = () => {
         },
 
         allCommunities: async (root, args) => {
-            let { limit, offset } = args
-
-            const communities = await Community.findAll({ // REMOVE MOST ASSOCIATIONS AFTER TESTING! They should reside in findCommunity
-                include: [
-                    {
-                        model: User,
-                        as: 'Creator',
-                        attributes: ["id", "name"]
-                    },
-                    {
-                        model: Category,
-                        as: 'Category',
-                        attributes: ["id", "title"]
-                    },
-                    {
-                        model: Topic,
-                        as: "Topics",
-                        include: [
-                            {
-                                model: User,
-                                as: "TopicCreator",
-                                attributes: ["id", "name", "profile_picture"]
-                            },
-                            {
-                                model: TopicComment,
-                                as: 'Comments',
-                                include: {
-                                    model: User,
-                                    as: 'Sender',
-                                    attributes: ["id", "name", "profile_picture"]
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        model: User,
-                        as: 'Members',
-                        attributes: ["id"]
-                    }
-                ],
+            let {
+                creatorId,
+                filter,
                 limit,
-                offset
-            })
+                offset,
+                limitTopic,
+                offsetTopic,
+                limitComment,
+                offsetComment
+            } = args
+
+            let communities
+            if (creatorId && filter) {
+                communities = await Community.findAndCountAll({
+                    attributes: ["id", "creatorId", "title", "picture"],
+                    where: {
+                        creatorId,
+                        title: {
+                            [Op.iLike]: `%${filter}%`
+                        }
+                    },
+                    include: [
+                        {
+                            model: Topic,
+                            as: "Topics",
+                            attributes: ["id", "createdAt", "title"],
+                            order: [
+                                ["createdAt", "DESC"]
+                            ],
+                            limit: limitTopic,
+                            offset: offsetTopic
+                        },
+                        {
+                            model: TopicComment,
+                            as: "Comments",
+                            attributes: ["id", "createdAt"],
+                            order: [
+                                ["createdAt", "DESC"]
+                            ],
+                            limit: limitComment,
+                            offset: offsetComment
+                        }
+                    ],
+                    limit,
+                    offset,
+                    distinct: "Community.id"
+                })
+            } else if (creatorId) {
+                communities = await Community.findAndCountAll({
+                    attributes: ["id", "creatorId", "title", "picture"],
+                    where: {
+                        creatorId
+                    },
+                    include: [
+                        {
+                            model: Topic,
+                            as: "Topics",
+                            attributes: ["id", "createdAt", "title"],
+                            order: [
+                                ["createdAt", "DESC"]
+                            ],
+                            limit: limitTopic,
+                            offset: offsetTopic
+                        },
+                        {
+                            model: TopicComment,
+                            as: "Comments",
+                            attributes: ["id", "createdAt"],
+                            order: [
+                                ["createdAt", "DESC"]
+                            ],
+                            limit: limitComment,
+                            offset: offsetComment
+                        }
+                    ],
+                    limit,
+                    offset,
+                    distinct: "Community.id"
+                })
+            } else if (filter) {
+                communities = await Community.findAndCountAll({
+                    attributes: ["id", "creatorId", "title", "picture"],
+                    where: {
+                        title: {
+                            [Op.iLike]: `%${filter}%`
+                        }
+                    },
+                    include: [
+                        {
+                            model: Topic,
+                            as: "Topics",
+                            attributes: ["id", "createdAt", "title"],
+                            order: [
+                                ["createdAt", "DESC"]
+                            ],
+                            limit: limitTopic,
+                            offset: offsetTopic
+                        },
+                        {
+                            model: TopicComment,
+                            as: "Comments",
+                            attributes: ["id", "createdAt"],
+                            order: [
+                                ["createdAt", "DESC"]
+                            ],
+                            limit: limitComment,
+                            offset: offsetComment
+                        }
+                    ],
+                    limit,
+                    offset,
+                    distinct: "Community.id"
+                })
+            } else {
+                communities = await Community.findAndCountAll({
+                    attributes: ["id", "creatorId", "title", "picture"],
+                    include: [
+                        {
+                            model: Topic,
+                            as: "Topics",
+                            attributes: ["id", "createdAt", "title"],
+                            limit: limitTopic,
+                            offset: offsetTopic
+                        },
+                        {
+                            model: TopicComment,
+                            as: "Comments",
+                            attributes: ["id", "createdAt"],
+                            order: [
+                                ["createdAt", "DESC"]
+                            ],
+                            limit: limitComment,
+                            offset: offsetComment
+                        }
+                    ],
+                    limit,
+                    offset,
+                    distinct: "Community.id"
+                })
+            }
 
             return communities
         },
@@ -469,23 +597,7 @@ module.exports = () => {
                         model: Category,
                         as: 'Category',
                         attributes: ["id", "title"]
-                    },
-                    // {
-                    //     model: User,
-                    //     as: 'Members',
-                    //     attributes: ["id", "name", "profile_picture"]
-                    // },
-                    // {
-                    //     model: Topic,
-                    //     as: "Topics",
-                    //     include: [
-                    //         {
-                    //             model: User,
-                    //             as: "TopicCreator",
-                    //             attributes: ["id", "name", "profile_picture"]
-                    //         }
-                    //     ]
-                    // }
+                    }
                 ]
             })
 
@@ -494,6 +606,28 @@ module.exports = () => {
             })
 
             return community
+        },
+
+        getCommunityMembersCount: async (root, args) => {
+            let { communityId } = args
+            const count = await sequelize.models.user_communities.count({
+                where: {
+                    communityId
+                }
+            })
+            return count
+        },
+
+        findTopicCount: async (root, args) => {
+            let { communityId } = args
+
+            const topicCount = await Topic.count({
+                where: {
+                    communityId
+                }
+            })
+
+            return topicCount
         },
 
         findTopic: async (root, args) => {
@@ -527,7 +661,14 @@ module.exports = () => {
         },
 
         findCommunityTopics: async (root, args) => {
-            const { communityId, filter, limit, offset } = args
+            const {
+                communityId,
+                filter,
+                limit,
+                offset,
+                limitComment,
+                offsetComment
+            } = args
 
             let topics
             if (filter) {
@@ -545,7 +686,9 @@ module.exports = () => {
                             attributes: ["id", "createdAt", "body"],
                             order: [
                                 ["createdAt", "DESC"]
-                            ]
+                            ],
+                            limit: limitComment,
+                            offset: offsetComment
                         },
                         {
                             model: User,
@@ -572,7 +715,9 @@ module.exports = () => {
                             attributes: ["id", "createdAt", "body"],
                             order: [
                                 ["createdAt", "DESC"]
-                            ]
+                            ],
+                            limit: limitComment,
+                            offset: offsetComment
                         },
                         {
                             model: User,
@@ -589,6 +734,7 @@ module.exports = () => {
                 })
             }
 
+            console.log('topics'.red, JSON.stringify(topics))
             return topics
         },
 
@@ -658,6 +804,11 @@ module.exports = () => {
                 rows: members
             }
         },
+
+        allCategories: async () => {
+            const categories = await Category.findAll()
+            return categories
+        }
     }
     return queries
 }

@@ -121,6 +121,7 @@ module.exports = gql`
 
     type TopicComment {
         id: ID!,
+        communityId: ID!,
         createdAt: DateTime!,
         updatedAt: DateTime!,
         body: String!,
@@ -134,6 +135,7 @@ module.exports = gql`
 
     type Topic {
         id: ID!,
+        communityId: ID!,
         createdAt: DateTime!,
         updatedAt: DateTime!,
         title: String!,
@@ -146,6 +148,7 @@ module.exports = gql`
 
     type Community {
         id: ID!,
+        creatorId: ID!,
         createdAt: DateTime!,
         updatedAt: DateTime!,
         title: String!,
@@ -159,6 +162,7 @@ module.exports = gql`
         Category: Category,
         Members: [User]!
         Topics: [Topic]!
+        Comments: [TopicComment]!
 
         #moderators: [User]!
     }
@@ -168,10 +172,23 @@ module.exports = gql`
         createdAt: DateTime!,
         updatedAt: DateTime!,
         userId: ID!
+        folderId: ID
         url: String!
         description: String
         
         Comments: [PhotoComment]
+    }
+
+    type PhotoFolder {
+        id: ID!
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
+        title: String!
+        userId: ID
+        visible_to_all: Boolean!
+
+        User: User
+        Photos: [Photo]
     }
 
     type PhotoCount {
@@ -202,9 +219,13 @@ module.exports = gql`
         count: Int!
         rows: [TopicComment]!
     }
+    type CommunityCount {
+        count: Int!
+        rows: [Community]!
+    }
 
     type Query {
-        allUsers(, limit: Int, offset: Int): [User]!
+        allUsers(limit: Int, offset: Int): [User]!
         findUser(userId: ID): User
 
         getFeed(limit: Int, offset: Int): UpdateCount
@@ -216,22 +237,37 @@ module.exports = gql`
 
         findTestimonials(receiverId: ID!, limit: Int, offset: Int): [Testimonial]!
 
-
         findUpdates(userId: ID!, limit: Int, offset: Int): [Update]!
 
-        findPhotos(userId: ID!, limit: Int, offset: Int): PhotoCount!
+        findPhotoFolders(userId: ID!): [PhotoFolder]!
+
+        findPhotos(userId: ID!, folderId: ID!, limit: Int, offset: Int): PhotoCount!
         findPhoto(photoId: ID!, userId: ID!): Photo
         findPhotoComments(photoId: ID!, limit: Int, offset: Int): PhotoCommentCount!
 
-        allCommunities(limit: Int, offset: Int): [Community]!
+        allCommunities(
+            creatorId: ID, 
+            filter: String, 
+            limit: Int, 
+            offset: Int, 
+            limitTopic: Int, 
+            offsetTopic: Int,
+            limitComment: Int,
+            offsetComment: Int
+        ): CommunityCount!
+        getCommunityMembersCount(communityId: ID!): Int
+
         findCommunity(communityId: ID!): Community
         
+        findTopicCount(communityId: ID!): Int
         findTopic(topicId: ID!, limit: Int, offset: Int): Topic
-        findCommunityTopics(communityId: ID!, filter: String, limit: Int, offset: Int): TopicCount!
+        findCommunityTopics(communityId: ID!, filter: String, limit: Int, offset: Int, limitComment: Int, offsetComment: Int): TopicCount!
 
         findTopicComments(topicId: ID!, order: Order!, limit: Int, offset: Int): TopicCommentCount!
 
         findCommunityMembers(communityId: ID!, filter: String, random: Boolean, limit: Int, offset: Int): UserCount!
+
+        allCategories: [Category]!
     }
 
     type Token {
@@ -269,6 +305,12 @@ module.exports = gql`
         hideUpdate(updateId: ID!): Update
         deleteUpdate(updateId: ID!): Update
 
+        createPhotoFolder(title: String, visible_to_all: Boolean): PhotoFolder
+        deletePhotoFolder(folderId: ID!): PhotoFolder
+
+        createPhotoComment(body: String!, photoId: ID!): PhotoComment
+        deletePhotoComment(commentId: ID!): PhotoComment
+
         createCommunity(
             title: String!
             picture: String!
@@ -276,6 +318,7 @@ module.exports = gql`
             categoryId: ID!
             type: String!
             language: String!
+            country: String!
         ): Community
         joinCommunity(communityId: ID!): Community
         leaveCommunity(communityId: ID!): Community

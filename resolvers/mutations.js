@@ -4,10 +4,13 @@ const {
     Community,
     Scrap, 
     Testimonial, 
+    Photo,
+    PhotoComment,
     Topic, 
     TopicComment,
     Category,
-    Update
+    Update,
+    PhotoFolder
  } = require('../models')
 const { UserInputError, ApolloError } = require('apollo-server')
 const bcrypt = require('bcrypt')
@@ -225,9 +228,15 @@ module.exports = () => {
             const { currentUser } = context
             if (!currentUser) throw new UserInputError('Erro de autenticação')
 
+            if (newPhoto.slice(0, 10) !== 'data:image') throw new UserInputError('Arquivo de imagem inválido')
+
             try {
                 const uploadResponse = await cloudinary.uploader.upload(newPhoto, {
-                    upload_preset: 'qe2wfvcw'
+                    upload_preset: 'user_photo',
+                    overwrite: true,
+                    transformation: [
+                        {width: 200, height: 200, crop: 'thumb'}
+                    ]
                 })
                 console.log('uploadResponse'.red, uploadResponse)
 
@@ -374,33 +383,121 @@ module.exports = () => {
             return null
         },
 
+        createPhotoFolder: async (root, args, context) => {
+            const { title, visible_to_all } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            try {
+                var album = await PhotoFolder.create({
+                    title,
+                    visible_to_all,
+                    userId: currentUser.id
+                })
+            } catch(error) {
+                throw new ApolloError(error)
+            }
+            return album
+        },
+
+        deletePhotoFolder: async (root, args, context) => {
+            const { folderId } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            try {
+                var folder = await PhotoFolder.findByPk(folderId, {
+                    include: {
+                        model: Photo,
+                        as: "Photos",
+                        attributes: ["id"]
+                    }
+                })
+            } catch(err) {
+                throw new ApolloError(err)
+            }
+
+            if (folder.userId !== currentUser.id) throw new UserInputError('Não tem permissão para excluir o álbum')
+
+            const photos = folder.Photos.map(p => p.id)
+            for (let p of photos) {
+                await Photo.destroy({ where: { id: p } })
+            }
+
+            await PhotoFolder.destroy({ where: { id: folderId } })
+
+            return null
+        },
+
+        createPhotoComment: async (root, args, context) => {
+            const { body, photoId } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            const photo = await Photo.findByPk(photoId)
+            if (!photo) throw new UserInputError('Foto inválida ou não encontrada', { invalidArgs: photoId })
+
+            const sanitizedBody = sanitizeHtml(body, sanitizeOptions)
+            const comment = await PhotoComment.create({
+                body: sanitizedBody,
+                photoId,
+                senderId: currentUser.id,
+                receiverId: photo.userId
+            })
+            return comment
+        },
+
+        deletePhotoComment: async (root, args, context) => {
+            const { commentId } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            await PhotoComment.destroy({ where: { id: commentId }})
+            return null
+        },
+
         createCommunity: async (root, args, context) => {
             const {
                 title,
-                picture,
-                description,
                 categoryId,
                 type,
                 language,
+                country,
+                picture,
+                description,
             } = args
             const { currentUser } = context
             if (!currentUser) throw new UserInputError('Erro de autenticação')
 
             // Validation
 
+            if (picture.slice(0, 10) !== 'data:image') throw new UserInputError('Arquivo de imagem inválido')
+
             const category = await Category.findByPk(categoryId)
             if (!category) throw new UserInputError('Categoria inválida', { invalidArgs: categoryId })
 
+            const uploadResponse = await cloudinary.uploader.upload(picture, {
+                upload_preset: 'community_photo',
+                overwrite: true,
+                transformation: [
+                    { width: 200, height: 200, crop: 'thumb' }
+                ]
+            })
+
+            if (!uploadResponse) throw new ApolloError('Erro ao salvar imagem no servidor')
+            console.log('uploadResponse'.red, uploadResponse)
+
             const community = await Community.create({
                 title,
-                picture,
+                picture: uploadResponse.secure_url,
                 description,
                 categoryId: category.id,
                 creatorId: currentUser.id,
                 language,
-                type
+                type,
+                country
             })
-
+            
             await Update.create({
                 body: "<p>criou uma comunidade</p>",
                 action: "joinCommunity",
@@ -412,6 +509,8 @@ module.exports = () => {
                 }),
                 userId: currentUser.id
             })
+
+            await currentUser.addSubscriptions(community)
 
             return community
         },
@@ -519,7 +618,6 @@ module.exports = () => {
                     attributes: ["creatorId"]
                 }
             })
-            console.log("deleting topic...".red, JSON.stringify(topic))
 
             if (!topic) throw new UserInputError('Tópico não encontrado', { invalidArgs: topicId })
 
@@ -549,6 +647,7 @@ module.exports = () => {
             })
 
             const topiccomment = await TopicComment.create({
+                communityId: topic.communityId,
                 senderId: currentUser.id,
                 receiverId: topic.creatorId,
                 topicId: topic.id,
