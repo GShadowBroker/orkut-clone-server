@@ -97,6 +97,7 @@ module.exports = gql`
         Testimonials: [Testimonial]!,
         Posts: [Update]!,
         Photos: [Photo]!
+        Videos: [Video]!
     }
 
     type FriendRequest {
@@ -179,6 +180,17 @@ module.exports = gql`
         Comments: [PhotoComment]
     }
 
+    type Video {
+        id: ID!
+        createdAt: DateTime!,
+        updatedAt: DateTime!,
+        userId: ID!
+        url: String!
+        description: String
+
+        User: User
+    }
+
     type PhotoFolder {
         id: ID!
         createdAt: DateTime!,
@@ -223,6 +235,10 @@ module.exports = gql`
         count: Int!
         rows: [Community]!
     }
+    type VideoCount {
+        count: Int!
+        rows: [Video]!
+    }
 
     type Query {
         allUsers(limit: Int, offset: Int): [User]!
@@ -244,6 +260,8 @@ module.exports = gql`
         findPhotos(userId: ID!, folderId: ID!, limit: Int, offset: Int): PhotoCount!
         findPhoto(photoId: ID!, userId: ID!): Photo
         findPhotoComments(photoId: ID!, limit: Int, offset: Int): PhotoCommentCount!
+
+        findVideos(userId: ID!, limit: Int, offset: Int): VideoCount
 
         allCommunities(
             creatorId: ID, 
@@ -308,8 +326,13 @@ module.exports = gql`
         createPhotoFolder(title: String, visible_to_all: Boolean): PhotoFolder
         deletePhotoFolder(folderId: ID!): PhotoFolder
 
+        uploadPhotos(photos: [String]!, folderId: ID!): Boolean
+
         createPhotoComment(body: String!, photoId: ID!): PhotoComment
         deletePhotoComment(commentId: ID!): PhotoComment
+
+        saveVideo(url: String!, description: String): Video
+        deleteVideo(videoId: ID!): Video
 
         createCommunity(
             title: String!

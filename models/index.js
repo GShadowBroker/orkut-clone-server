@@ -38,6 +38,8 @@ const PhotoFolder = sequelize.define('photofolder', {
 const Photo = sequelize.define('photo', { url: DataTypes.STRING, description: DataTypes.STRING });
 const PhotoComment = sequelize.define('photocomment', { body: DataTypes.STRING(1000) });
 
+const Video = sequelize.define('video', { url: DataTypes.STRING, description: DataTypes.STRING });
+
 // Associations
 
 // Scraps
@@ -119,6 +121,10 @@ TopicComment.belongsTo(Topic, { as: "Topic", foreignKey: { name: "topicId", allo
 Community.hasMany(TopicComment, { as: "Comments", foreignKey: { name: 'communityId', allowNull: false } });
 TopicComment.belongsTo(Community, { as: "Community", foreignKey: { name: "communityId", allowNull: false } });
 
+// Videos
+User.hasMany(Video, { as: "Videos", foreignKey: { name: "userId", allowNull: false }});
+Video.belongsTo(User, { as: "User", foreignKey: { name: "userId", allowNull: false } });
+
 // Synchronize - Development ONLY
 if (process.env.NODE_ENV === 'development' && 1 === 2) {
     (async () => {
@@ -148,6 +154,12 @@ if (process.env.NODE_ENV === 'development' && 1 === 2) {
 
             await gledy.addFriends(larissa.id)
             await larissa.addFriends(gledy.id)
+
+            await Video.create({
+                url: "https://www.youtube.com/watch?v=NvR60Wg9R7Q",
+                description: "Bed of roses",
+                userId: "1"
+            })
             
             photos = [
                 'https://i.pinimg.com/564x/99/cf/9f/99cf9ff40f47e1f3faf0f85f78180f4c.jpg',
@@ -355,5 +367,6 @@ module.exports = {
     Photo,
     PhotoComment,
     Topic,
-    TopicComment
+    TopicComment,
+    Video
 }

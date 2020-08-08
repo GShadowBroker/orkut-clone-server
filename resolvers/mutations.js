@@ -10,7 +10,8 @@ const {
     TopicComment,
     Category,
     Update,
-    PhotoFolder
+    PhotoFolder,
+    Video
  } = require('../models')
 const { UserInputError, ApolloError } = require('apollo-server')
 const bcrypt = require('bcrypt')
@@ -429,6 +430,51 @@ module.exports = () => {
             return null
         },
 
+        uploadPhotos: async (root, args, context) => {
+            const { photos, folderId } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+
+            const folder = await PhotoFolder.findByPk(folderId)
+            if (!folder) throw new UserInputError('Álbum não encontrado ou inválido', { invalidArgs: folderId })
+            if (folder.userId.toString() !== currentUser.id.toString()) {
+                throw new UserInputError('Não tem permissão para subir fotos neste álbum')
+            }
+
+            let uploadedPhotos = []
+            for (let p of photos) {
+                if (p.slice(0, 10) !== 'data:image') throw new UserInputError('Arquivo de imagem inválido')
+                const uploadResponse = await  cloudinary.uploader.upload(p, {
+                    upload_preset: 'user_photo',
+                    overwrite: true
+                })
+                if (!uploadResponse) throw new ApolloError('Erro ao salvar imagem no servidor')
+                uploadedPhotos.push(uploadResponse)
+            }
+            for (let p of uploadedPhotos) {
+                await Photo.create({
+                    url: p.secure_url,
+                    description: "",
+                    userId: currentUser.id,
+                    folderId: folder.id
+                })
+            }
+
+            await Update.create({
+                body: "<p>adicionou fotos ao álbum</p>",
+                action: "addPhoto",
+                object: JSON.stringify({
+                    id: folder.id,
+                    name: folder.title,
+                    url: `/perfil/${currentUser.id}/albuns/${folder.id}/fotos`,
+                    picture: uploadedPhotos[0].secure_url
+                }),
+                userId: currentUser.id
+            })
+
+            return true
+        },
+
         createPhotoComment: async (root, args, context) => {
             const { body, photoId } = args
             const { currentUser } = context
@@ -453,6 +499,32 @@ module.exports = () => {
             if (!currentUser) throw new UserInputError('Erro de autenticação')
 
             await PhotoComment.destroy({ where: { id: commentId }})
+            return null
+        },
+
+        saveVideo: async (root, args, context) => {
+            const { url, description } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+            
+            const video = await Video.create({
+                userId: currentUser.id,
+                url,
+                description
+            })
+            return video
+        },
+
+        deleteVideo: async (root, args, context) => {
+            const { videoId } = args
+            const { currentUser } = context
+            if (!currentUser) throw new UserInputError('Erro de autenticação')
+            
+            await Video.destroy({
+                where: {
+                    id: videoId
+                }
+            })
             return null
         },
 

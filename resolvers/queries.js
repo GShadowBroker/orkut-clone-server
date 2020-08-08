@@ -10,7 +10,8 @@ const {
     Update, 
     Topic, 
     TopicComment, 
-    PhotoFolder
+    PhotoFolder,
+    Video
 } = require('../models')
 const { Sequelize, Op } = require('sequelize')
 
@@ -76,6 +77,12 @@ module.exports = () => {
                         model: Photo,
                         as: 'Photos',
                         attributes: ['id', 'url', 'description', 'folderId'],
+                        separate: true
+                    },
+                    {
+                        model: Video,
+                        as: 'Videos',
+                        attributes: ['id', 'url'],
                         separate: true
                     },
                     {
@@ -436,6 +443,21 @@ module.exports = () => {
             })
 
             return comments
+        },
+
+        findVideos: async (root, args) => {
+            const { userId, limit, offset } = args
+
+            const videos = await Video.findAndCountAll({
+                where: {
+                    userId
+                },
+                limit,
+                offset
+            })
+
+            console.log('videos', JSON.stringify(videos))
+            return videos
         },
 
         allCommunities: async (root, args) => {

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-const { User, Community, Scrap, Photo, Testimonial, Update } = require('../models')
+const { User, Community, Scrap, Photo, Testimonial, Update, Video } = require('../models')
 
 module.exports = async ({ req }) => {
     const auth = req ? req.headers.authorization : null
@@ -28,6 +28,12 @@ module.exports = async ({ req }) => {
                     model: Photo,
                     as: 'Photos',
                     attributes: ['id', 'url', 'description', 'folderId'],
+                    separate: true
+                },
+                {
+                    model: Video,
+                    as: 'Videos',
+                    attributes: ['id', 'url'],
                     separate: true
                 },
                 {
