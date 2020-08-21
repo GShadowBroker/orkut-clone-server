@@ -15,16 +15,21 @@ const videoModel = require("./Video");
 const axios = require("axios"); // REMOVER AXIOS!!!
 
 // DB Connection
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USERNAME,
-  process.env.DB_PASSWORD,
-  {
-    host: "localhost",
-    dialect: process.env.DB_DIALECT,
-    logging: false,
-  }
-);
+var sequelize;
+if (process.env.NODE_ENV === "production") {
+  sequelize = new Sequelize(process.env.DATABASE_URL);
+} else {
+  sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USERNAME,
+    process.env.DB_PASSWORD,
+    {
+      host: "localhost",
+      dialect: process.env.DB_DIALECT,
+      logging: false,
+    }
+  );
+}
 
 // Models
 const User = userModel(sequelize, DataTypes);
