@@ -12,7 +12,7 @@ const photoModel = require("./Photo");
 const photoCommentModel = require("./PhotoComment");
 const videoModel = require("./Video");
 
-const axios = require("axios"); // REMOVER AXIOS!!!
+// const axios = require("axios"); // REMOVER AXIOS!!!
 
 // DB Connection
 var sequelize;
@@ -227,8 +227,13 @@ Video.belongsTo(User, {
 });
 
 // Synchronize - Development ONLY
-let syncDatabase = false;
-if (process.env.NODE_ENV === "development" && syncDatabase === true) {
+let forceSyncDatabase = false;
+if (!forceSyncDatabase) {
+  (async () => {
+    await sequelize.sync({ alter: true });
+  })();
+}
+if (process.env.NODE_ENV === "development" && forceSyncDatabase === true) {
   (async () => {
     try {
       await sequelize.sync({ force: true });
@@ -366,30 +371,30 @@ if (process.env.NODE_ENV === "development" && syncDatabase === true) {
       await gledy.addSubscriptions(comunidade2);
       await gledy.addSubscriptions(comunidade3);
 
-      const response = await axios.get(
-        "https://randomuser.me/api/?results=200"
-      );
-      const randUsers = response.data.results;
+      // const response = await axios.get(
+      //   "https://randomuser.me/api/?results=200"
+      // );
+      // const randUsers = response.data.results;
 
-      for (let u of randUsers) {
-        console.log("randUsers".red, randUsers);
-        const newUser = await User.create({
-          name: `${u.name.first} ${u.name.last}`,
-          password: u.login.sha1,
-          sex: u.gender === "female" ? "feminino" : "masculino",
-          born: u.dob.date.slice(0, 10),
-          profile_picture: u.picture.large,
-          email: u.email,
-          city: u.location.city,
-          country: u.location.country,
-        });
-        await newUser.addSubscriptions(comunidade1);
-        await newUser.addSubscriptions(comunidade2);
-        await newUser.addSubscriptions(comunidade3);
+      // for (let u of randUsers) {
+      //   console.log("randUsers".red, randUsers);
+      //   const newUser = await User.create({
+      //     name: `${u.name.first} ${u.name.last}`,
+      //     password: u.login.sha1,
+      //     sex: u.gender === "female" ? "feminino" : "masculino",
+      //     born: u.dob.date.slice(0, 10),
+      //     profile_picture: u.picture.large,
+      //     email: u.email,
+      //     city: u.location.city,
+      //     country: u.location.country,
+      //   });
+      //   await newUser.addSubscriptions(comunidade1);
+      //   await newUser.addSubscriptions(comunidade2);
+      //   await newUser.addSubscriptions(comunidade3);
 
-        await newUser.addFriends(gledy);
-        await gledy.addFriends(newUser);
-      }
+      //   await newUser.addFriends(gledy);
+      //   await gledy.addFriends(newUser);
+      // }
 
       console.log("All models synchronized successfully!".green);
     } catch (error) {
