@@ -10,10 +10,14 @@ const clearOldUpdates = require("./utils/clearOldUpdates");
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  engine: {
+    reportSchema: true,
+    variant: "current",
+  },
   context,
 });
 
-server.listen().then(({ url }) => {
+server.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
   console.log(`🚀 Server ready at ${url}`.cyan);
   clearOldUpdates(1000 * 60 * 60 * 6);
 });
