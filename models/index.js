@@ -230,7 +230,11 @@ Video.belongsTo(User, {
 let forceSyncDatabase = false;
 if (!forceSyncDatabase) {
   (async () => {
-    await sequelize.sync({ alter: true });
+    try {
+      await sequelize.sync();
+    } catch (error) {
+      console.error(error);
+    }
   })();
 }
 if (process.env.NODE_ENV === "development" && forceSyncDatabase === true) {
