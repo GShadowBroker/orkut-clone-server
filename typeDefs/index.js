@@ -1,355 +1,380 @@
-const { gql } = require('apollo-server')
+const { gql } = require("apollo-server");
 
 module.exports = gql`
-    scalar Date
-    scalar DateTime
-    scalar EmailAddress
-    scalar JSON
-    
-    enum Sex {
-        masculino,
-        feminino,
-        notinformed
-    }
+  scalar Date
+  scalar DateTime
+  scalar EmailAddress
+  scalar JSON
 
-    enum Order {
-        ASC
-        DESC
-    }
+  enum Sex {
+    masculino
+    feminino
+    notinformed
+  }
 
-    type Comment {
-        id: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        body: String!,
-        userId: ID!,
-        senderId: ID!,
-        receiverId: ID!,
-        photoId: ID!
-        Sender: User!
-    }
+  enum Order {
+    ASC
+    DESC
+  }
 
-    type Scrap {
-        id: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        body: String!,
-        senderId: ID!,
-        receiverId: ID!,
-        Sender: User!
-    }
+  type Comment {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    body: String!
+    userId: ID!
+    senderId: ID!
+    receiverId: ID!
+    photoId: ID!
+    Sender: User!
+  }
 
-    type PhotoComment {
-        id: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        body: String!,
-        receiverId: ID!,
-        photoId: ID!,
-        Sender: User!
-    }
+  type Scrap {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    body: String!
+    senderId: ID!
+    receiverId: ID!
+    Sender: User!
+  }
 
-    type Testimonial {
-        id: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        body: String!,
-        senderId: ID!,
-        receiverId: ID!,
-        Sender: User!
-    }
+  type PhotoComment {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    body: String!
+    receiverId: ID!
+    photoId: ID!
+    Sender: User!
+  }
 
-    type Update {
-        id: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        body: String!,
-        userId: ID!,
+  type Testimonial {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    body: String!
+    senderId: ID!
+    receiverId: ID!
+    Sender: User!
+  }
 
-        action: String,
-        object: JSON,
-        picture: String,
-        visible: Boolean,
+  type Update {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    body: String!
+    userId: ID!
 
-        User: User!
-    }
+    action: String
+    object: JSON
+    picture: String
+    visible: Boolean
 
-    type User {
-        id: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        name: String!,
-        email: String,
-        profile_picture: String,
-        sex: Sex,
-        born: Date,
-        age: Int,
-        country: String,
-        city: String,
-        about: String,
-        videos: [String]!,
+    User: User!
+  }
 
-        Friends: [User]!,
-        Requestees: [User]!,
-        Requesters: [User]!,
-        Subscriptions: [Community]!,
-        Scraps: [Scrap]!,
-        Testimonials: [Testimonial]!,
-        Posts: [Update]!,
-        Photos: [Photo]!
-        Videos: [Video]!
-    }
+  type User {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    name: String!
+    email: String
+    profile_picture: String
+    sex: Sex
+    born: Date
+    age: Int
+    country: String
+    city: String
+    about: String
+    videos: [String]!
 
-    type FriendRequest {
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        requesterId: ID!,
-        requesteeId: ID!
-    }
+    Friends: [User]!
+    Requestees: [User]!
+    Requesters: [User]!
+    Subscriptions: [Community]!
+    Scraps: [Scrap]!
+    Testimonials: [Testimonial]!
+    Posts: [Update]!
+    Photos: [Photo]!
+    Videos: [Video]!
+  }
 
-    type Post {
-        id: ID!
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        comments: [Comment]!,
-        author: User!
-    }
+  type FriendRequest {
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    requesterId: ID!
+    requesteeId: ID!
+  }
 
-    type Category {
-        id: ID!,
-        title: String!
-    }
+  type Post {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    comments: [Comment]!
+    author: User!
+  }
 
-    type TopicComment {
-        id: ID!,
-        communityId: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        body: String!,
-        senderId: ID,
-        receiverId: ID,
+  type Category {
+    id: ID!
+    title: String!
+  }
 
-        Receiver: User,
-        Sender: User,
-        Topic: Topic
-    }
+  type TopicComment {
+    id: ID!
+    communityId: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    body: String!
+    senderId: ID
+    receiverId: ID
 
-    type Topic {
-        id: ID!,
-        communityId: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        title: String!,
-        body: String!,
+    Receiver: User
+    Sender: User
+    Topic: Topic
+  }
 
-        Community: Community,
-        TopicCreator: User,
-        Comments: [TopicComment]
-    }
+  type Topic {
+    id: ID!
+    communityId: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    title: String!
+    body: String!
 
-    type Community {
-        id: ID!,
-        creatorId: ID!,
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        title: String!,
-        picture: String!,
-        description: String!,
-        language: String,
-        country: String
-        type: String!
+    Community: Community
+    TopicCreator: User
+    Comments: [TopicComment]
+  }
 
-        Creator: User,
-        Category: Category,
-        Members: [User]!
-        Topics: [Topic]!
-        Comments: [TopicComment]!
+  type Community {
+    id: ID!
+    creatorId: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    title: String!
+    picture: String!
+    description: String!
+    language: String
+    country: String
+    type: String!
 
-        #moderators: [User]!
-    }
+    Creator: User
+    Category: Category
+    Members: [User]!
+    Topics: [Topic]!
+    Comments: [TopicComment]!
 
-    type Photo {
-        id: ID!
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        userId: ID!
-        folderId: ID
-        url: String!
-        description: String
-        
-        Comments: [PhotoComment]
-    }
+    #moderators: [User]!
+  }
 
-    type Video {
-        id: ID!
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        userId: ID!
-        url: String!
-        description: String
+  type Photo {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    userId: ID!
+    folderId: ID
+    url: String!
+    description: String
 
-        User: User
-    }
+    Comments: [PhotoComment]
+  }
 
-    type PhotoFolder {
-        id: ID!
-        createdAt: DateTime!,
-        updatedAt: DateTime!,
-        title: String!
-        userId: ID
-        visible_to_all: Boolean!
+  type Video {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    userId: ID!
+    url: String!
+    description: String
 
-        User: User
-        Photos: [Photo]
-    }
+    User: User
+  }
 
-    type PhotoCount {
-        count: Int!,
-        rows: [Photo]!
-    }
-    type ScrapCount {
-        count: Int!,
-        rows: [Scrap]!
-    }
-    type PhotoCommentCount {
-        count: Int!,
-        rows: [PhotoComment]!
-    }
-    type UpdateCount {
-        count: Int!,
-        rows: [Update]!
-    }
-    type TopicCount {
-        count: Int!,
-        rows: [Topic]!
-    }
-    type UserCount {
-        count: Int!,
-        rows: [User]!
-    }
-    type TopicCommentCount {
-        count: Int!
-        rows: [TopicComment]!
-    }
-    type CommunityCount {
-        count: Int!
-        rows: [Community]!
-    }
-    type VideoCount {
-        count: Int!
-        rows: [Video]!
-    }
+  type PhotoFolder {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    title: String!
+    userId: ID
+    visible_to_all: Boolean!
 
-    type Query {
-        allUsers(limit: Int, offset: Int): [User]!
-        findUser(userId: ID): User
+    User: User
+    Photos: [Photo]
+  }
 
-        getFeed(limit: Int, offset: Int): UpdateCount
-        getFriendSuggestions: [User]!
+  type PhotoCount {
+    count: Int!
+    rows: [Photo]!
+  }
+  type ScrapCount {
+    count: Int!
+    rows: [Scrap]!
+  }
+  type PhotoCommentCount {
+    count: Int!
+    rows: [PhotoComment]!
+  }
+  type UpdateCount {
+    count: Int!
+    rows: [Update]!
+  }
+  type TopicCount {
+    count: Int!
+    rows: [Topic]!
+  }
+  type UserCount {
+    count: Int!
+    rows: [User]!
+  }
+  type TopicCommentCount {
+    count: Int!
+    rows: [TopicComment]!
+  }
+  type CommunityCount {
+    count: Int!
+    rows: [Community]!
+  }
+  type VideoCount {
+    count: Int!
+    rows: [Video]!
+  }
 
-        findFriends(userId: ID!, limit: Int, offset: Int): [User]!
+  type Query {
+    allUsers(filter: String, limit: Int, offset: Int): UserCount!
+    findUser(userId: ID): User
 
-        findScraps(receiverId: ID!, limit: Int, offset: Int): ScrapCount!
+    getFeed(limit: Int, offset: Int): UpdateCount
+    getFriendSuggestions: [User]!
 
-        findTestimonials(receiverId: ID!, limit: Int, offset: Int): [Testimonial]!
+    findFriends(userId: ID!, limit: Int, offset: Int): [User]!
 
-        findUpdates(userId: ID!, limit: Int, offset: Int): [Update]!
+    findScraps(receiverId: ID!, limit: Int, offset: Int): ScrapCount!
 
-        findPhotoFolders(userId: ID!): [PhotoFolder]!
+    findTestimonials(receiverId: ID!, limit: Int, offset: Int): [Testimonial]!
 
-        findPhotos(userId: ID!, folderId: ID!, limit: Int, offset: Int): PhotoCount!
-        findPhoto(photoId: ID!, userId: ID!): Photo
-        findPhotoComments(photoId: ID!, limit: Int, offset: Int): PhotoCommentCount!
+    findUpdates(userId: ID!, limit: Int, offset: Int): [Update]!
 
-        findVideos(userId: ID!, limit: Int, offset: Int): VideoCount
+    findPhotoFolders(userId: ID!): [PhotoFolder]!
 
-        allCommunities(
-            creatorId: ID, 
-            filter: String, 
-            limit: Int, 
-            offset: Int, 
-            limitTopic: Int, 
-            offsetTopic: Int,
-            limitComment: Int,
-            offsetComment: Int
-        ): CommunityCount!
-        getCommunityMembersCount(communityId: ID!): Int
+    findPhotos(userId: ID!, folderId: ID!, limit: Int, offset: Int): PhotoCount!
+    findPhoto(photoId: ID!, userId: ID!): Photo
+    findPhotoComments(photoId: ID!, limit: Int, offset: Int): PhotoCommentCount!
 
-        findCommunity(communityId: ID!): Community
-        
-        findTopicCount(communityId: ID!): Int
-        findTopic(topicId: ID!, limit: Int, offset: Int): Topic
-        findCommunityTopics(communityId: ID!, filter: String, limit: Int, offset: Int, limitComment: Int, offsetComment: Int): TopicCount!
+    findVideos(userId: ID!, limit: Int, offset: Int): VideoCount
 
-        findTopicComments(topicId: ID!, order: Order!, limit: Int, offset: Int): TopicCommentCount!
+    allCommunities(
+      creatorId: ID
+      filter: String
+      limit: Int
+      offset: Int
+      limitTopic: Int
+      offsetTopic: Int
+      limitComment: Int
+      offsetComment: Int
+    ): CommunityCount!
+    getCommunityMembersCount(communityId: ID!): Int
 
-        findCommunityMembers(communityId: ID!, filter: String, random: Boolean, limit: Int, offset: Int): UserCount!
+    findCommunity(communityId: ID!): Community
 
-        allCategories: [Category]!
-    }
+    findTopicCount(communityId: ID!): Int
+    findTopic(topicId: ID!, limit: Int, offset: Int): Topic
+    findCommunityTopics(
+      communityId: ID!
+      filter: String
+      limit: Int
+      offset: Int
+      limitComment: Int
+      offsetComment: Int
+    ): TopicCount!
 
-    type Token {
-        id: ID!
-        value: String!
-    }
+    findTopicComments(
+      topicId: ID!
+      order: Order!
+      limit: Int
+      offset: Int
+    ): TopicCommentCount!
 
-    type Mutation {
-        register(
-            email: EmailAddress!,
-            password: String!,
-            born: Date!,
-            name: String!,
-            sex: Sex,
-            country: String!
-        ): User
-        login(
-            email: EmailAddress!,
-            password: String!
-        ): Token
+    findCommunityMembers(
+      communityId: ID!
+      filter: String
+      random: Boolean
+      limit: Int
+      offset: Int
+    ): UserCount!
 
-        sendFriendRequest(requesteeId: ID!): [FriendRequest]!
-        respondFriendRequest(requesterId: ID!, accept: Boolean!): User
-        unfriend(friendId: ID!): User
+    allCategories: [Category]!
+  }
 
-        updateProfilePicture(newPhoto: String!): User
+  type Token {
+    id: ID!
+    value: String!
+  }
 
-        sendScrap(body: String!, userId: ID!): Scrap
-        deleteScrap(userId: ID!, scrapId: ID!): Scrap
+  type Mutation {
+    register(
+      email: EmailAddress!
+      password: String!
+      born: Date!
+      name: String!
+      sex: Sex
+      country: String!
+    ): User
+    login(email: EmailAddress!, password: String!): Token
 
-        sendTestimonial(body: String!, userId: ID!): Testimonial
-        deleteTestimonial(userId: ID!, testimonialId: ID!): Testimonial
+    editProfile(
+      name: String!
+      born: Date!
+      country: String!
+      city: String
+      sex: Sex
+      interests: String
+      about: String
+    ): User
 
-        sendUpdate(body: String!): Update
-        hideUpdate(updateId: ID!): Update
-        deleteUpdate(updateId: ID!): Update
+    sendFriendRequest(requesteeId: ID!): [FriendRequest]!
+    respondFriendRequest(requesterId: ID!, accept: Boolean!): User
+    unfriend(friendId: ID!): User
 
-        createPhotoFolder(title: String, visible_to_all: Boolean): PhotoFolder
-        deletePhotoFolder(folderId: ID!): PhotoFolder
+    updateProfilePicture(newPhoto: String!): User
 
-        uploadPhotos(photos: [String]!, folderId: ID!): Boolean
+    sendScrap(body: String!, userId: ID!): Scrap
+    deleteScrap(userId: ID!, scrapId: ID!): Scrap
 
-        createPhotoComment(body: String!, photoId: ID!): PhotoComment
-        deletePhotoComment(commentId: ID!): PhotoComment
+    sendTestimonial(body: String!, userId: ID!): Testimonial
+    deleteTestimonial(userId: ID!, testimonialId: ID!): Testimonial
 
-        saveVideo(url: String!, description: String): Video
-        deleteVideo(videoId: ID!): Video
+    sendUpdate(body: String!): Update
+    hideUpdate(updateId: ID!): Update
+    deleteUpdate(updateId: ID!): Update
 
-        createCommunity(
-            title: String!
-            picture: String!
-            description: String
-            categoryId: ID!
-            type: String!
-            language: String!
-            country: String!
-        ): Community
-        joinCommunity(communityId: ID!): Community
-        leaveCommunity(communityId: ID!): Community
+    createPhotoFolder(title: String, visible_to_all: Boolean): PhotoFolder
+    deletePhotoFolder(folderId: ID!): PhotoFolder
 
-        createTopic(communityId: ID!, title: String!, body: String!): Topic
-        deleteTopic(topicId: ID!): Topic
+    uploadPhotos(photos: [String]!, folderId: ID!): Boolean
 
-        sendTopicComment(topicId: ID!, body: String!): TopicComment
-        deleteTopicComment(topicCommentId: ID!): TopicComment
-    }
-`
+    createPhotoComment(body: String!, photoId: ID!): PhotoComment
+    deletePhotoComment(commentId: ID!): PhotoComment
+
+    saveVideo(url: String!, description: String): Video
+    deleteVideo(videoId: ID!): Video
+
+    createCommunity(
+      title: String!
+      picture: String!
+      description: String
+      categoryId: ID!
+      type: String!
+      language: String!
+      country: String!
+    ): Community
+    joinCommunity(communityId: ID!): Community
+    leaveCommunity(communityId: ID!): Community
+
+    createTopic(communityId: ID!, title: String!, body: String!): Topic
+    deleteTopic(topicId: ID!): Topic
+
+    sendTopicComment(topicId: ID!, body: String!): TopicComment
+    deleteTopicComment(topicCommentId: ID!): TopicComment
+  }
+`;
