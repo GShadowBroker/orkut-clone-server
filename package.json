@@ -1,7 +1,7 @@
 {
   "name": "orkut",
   "version": "1.0.0",
-  "description": "Orkut server clone built with Node, MongoDB, Apollo, GraphQL",
+  "description": "Orkut server clone built with Node, PostgreSQL, Apollo, GraphQL",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -24,7 +24,7 @@
     "sequelize": "^6.3.0"
   },
   "devDependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "cross-env": "^7.0.2",
     "dotenv": "^8.2.0",
     "nodemon": "^2.0.4",

@@ -17,7 +17,12 @@ const videoModel = require("./Video");
 // DB Connection
 var sequelize;
 if (process.env.NODE_ENV === "production") {
-  sequelize = new Sequelize(process.env.DATABASE_URL);
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    ssl: true,
+    dialectOptions: {
+      ssl: true,
+    },
+  });
 } else {
   sequelize = new Sequelize(
     process.env.DB_NAME,
@@ -27,6 +32,11 @@ if (process.env.NODE_ENV === "production") {
       host: "localhost",
       dialect: process.env.DB_DIALECT,
       logging: false,
+      // dialectOptions: {
+      //   ssl: {
+      //     rejectUnauthorized: false,
+      //   },
+      // },
     }
   );
 }
