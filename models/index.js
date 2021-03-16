@@ -18,9 +18,10 @@ const videoModel = require("./Video");
 var sequelize;
 if (process.env.NODE_ENV === "production") {
   sequelize = new Sequelize(process.env.DATABASE_URL, {
-    ssl: true,
     dialectOptions: {
-      ssl: true,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     },
   });
 } else {
