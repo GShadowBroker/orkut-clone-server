@@ -12,8 +12,6 @@ const photoModel = require("./Photo");
 const photoCommentModel = require("./PhotoComment");
 const videoModel = require("./Video");
 
-// const axios = require("axios"); // REMOVER AXIOS!!!
-
 // DB Connection
 var sequelize;
 if (process.env.NODE_ENV === "production") {
@@ -22,6 +20,7 @@ if (process.env.NODE_ENV === "production") {
       ssl: {
         rejectUnauthorized: false,
       },
+      logging: false,
     },
   });
 } else {
@@ -33,11 +32,6 @@ if (process.env.NODE_ENV === "production") {
       host: "localhost",
       dialect: process.env.DB_DIALECT,
       logging: false,
-      // dialectOptions: {
-      //   ssl: {
-      //     rejectUnauthorized: false,
-      //   },
-      // },
     }
   );
 }
