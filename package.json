@@ -20,7 +20,7 @@
     "jsonwebtoken": "^8.5.1",
     "pg": "^8.2.1",
     "pg-hstore": "^2.3.3",
-    "sanitize-html": "^1.27.1",
+    "sanitize-html": "^2.3.2",
     "sequelize": "^6.3.0"
   },
   "devDependencies": {
