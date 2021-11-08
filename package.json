@@ -11,7 +11,7 @@
   "author": "Gledyson Ferreira dos Santos",
   "license": "ISC",
   "dependencies": {
-    "apollo-server": "^2.15.1",
+    "apollo-server": "^2.25.3",
     "bcrypt": "^5.0.0",
     "cloudinary": "^1.22.0",
     "colors": "^1.4.0",
