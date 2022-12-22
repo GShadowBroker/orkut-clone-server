@@ -17,7 +17,7 @@
     "colors": "^1.4.0",
     "graphql": "^15.2.0",
     "graphql-scalars": "^1.2.1",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "pg": "^8.2.1",
     "pg-hstore": "^2.3.3",
     "sanitize-html": "^1.27.1",
